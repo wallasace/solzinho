@@ -82,6 +82,19 @@ outro sistema de coordenadas ao cruzar de tela, e o arraste travava.
 Pelo mesmo motivo, o renderer encerra o arraste se receber `mousemove` com
 nenhum botão pressionado — o `mouseup` pode se perder na troca de tela.
 
+## Onde a janela do sol aceita clique
+
+A janela do sol deixa o mouse atravessar (`setIgnoreMouseEvents(true)`),
+exceto sobre o sol e sobre o balão/painel de respiração quando visíveis.
+Quem decide é `hoverTick()` no main, a cada 50ms, comparando
+`screen.getCursorScreenPoint()` com essas áreas (o renderer informa onde
+estão balão e painel via `set-interactive-rects`).
+
+A versão anterior usava `mouseenter`/`mouseleave` no renderer, que dependem
+do repasse de mouse do Windows (`forward: true`). Em monitor com escala !=
+100% esse repasse informa a posição errada, o sol nunca "percebia" o mouse
+em cima e ficava impossível de clicar/arrastar depois de mudar de tela.
+
 ## Posição do sol e múltiplos monitores
 
 A posição da janela do sol é guardada em `sunPos` (com casas decimais) e

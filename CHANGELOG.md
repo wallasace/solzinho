@@ -36,6 +36,10 @@ funcionalidade, não releases.
   podia se perder (agora o arraste também termina se o botão não estiver
   mais pressionado), e o arredondamento do Windows engolia o passo de
   ~1px da caminhada (agora a posição é guardada pelo app).
+- Corrigido: depois de levar o sol pra um monitor com outra escala, ele
+  andava mas não dava mais pra clicar nem arrastar. A detecção de "mouse em
+  cima do sol" dependia do repasse de mouse do Windows, que informa a
+  posição errada nesses monitores; agora o app mesmo confere o cursor.
 - A caminhada atravessa todos os monitores de quem estiver usando, subindo
   ou descendo pro "chão" de cada tela.
 - Monitor desconectado ou mudança de resolução/escala com o app aberto:

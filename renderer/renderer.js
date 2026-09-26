@@ -83,8 +83,25 @@ function hideBubble() {
   bubbleEl.classList.remove('visible');
   bubbleEl.classList.add('hidden');
   sunWrap.classList.remove('shining');
+  reportInteractiveRects();
   window.solzinho.bubbleDismissed();
 }
+
+// Informa ao main onde estão o balão e o painel de respiração quando visíveis,
+// pra essas áreas serem clicáveis (o resto da janela deixa o mouse passar).
+function reportInteractiveRects() {
+  const rects = [bubbleEl, breathPanelEl]
+    .filter((el) => el.classList.contains('visible'))
+    .map((el) => {
+      const r = el.getBoundingClientRect();
+      return { x: r.left, y: r.top, width: r.width, height: r.height };
+    });
+  window.solzinho.setInteractiveRects(rects);
+}
+
+// o tamanho real só existe depois da animação de entrada (que começa pequena)
+bubbleEl.addEventListener('animationend', reportInteractiveRects);
+breathPanelEl.addEventListener('animationend', reportInteractiveRects);
 
 bubbleEl.addEventListener('click', () => {
   if (bubbleHideTimer) clearTimeout(bubbleHideTimer);
@@ -146,27 +163,17 @@ function endBreathing() {
   sunWrap.classList.remove('breathing');
   breathPanelEl.classList.remove('visible');
   breathPanelEl.classList.add('hidden');
+  reportInteractiveRects();
 }
 
 breathPanelEl.addEventListener('click', () => {
   window.solzinho.stopBreathing();
 });
 
-breathPanelEl.addEventListener('mouseenter', () => window.solzinho.setMouseIgnore(false));
-breathPanelEl.addEventListener('mouseleave', () => window.solzinho.setMouseIgnore(true));
-
 let isDragging = false;
 let dragMoved = false;
 let dragStart = null;
 const DRAG_THRESHOLD = 4;
-
-sunEl.addEventListener('mouseenter', () => window.solzinho.setMouseIgnore(false));
-sunEl.addEventListener('mouseleave', () => {
-  if (isDragging) return; // não solta o mouse-passthrough no meio do arraste
-  window.solzinho.setMouseIgnore(true);
-});
-bubbleEl.addEventListener('mouseenter', () => window.solzinho.setMouseIgnore(false));
-bubbleEl.addEventListener('mouseleave', () => window.solzinho.setMouseIgnore(true));
 
 sunEl.addEventListener('click', () => {
   if (dragMoved) return;
@@ -189,7 +196,6 @@ function endDrag() {
   if (!isDragging) return;
   isDragging = false;
   window.solzinho.dragEnd();
-  if (!sunEl.matches(':hover')) window.solzinho.setMouseIgnore(true);
 }
 
 window.addEventListener('mousemove', (event) => {

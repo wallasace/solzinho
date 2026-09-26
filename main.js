@@ -194,6 +194,7 @@ function createWindow() {
   });
 
   startWalking();
+  hoverTimer = setInterval(hoverTick, 50);
   scheduleNextIdle();
   scheduleNextTip();
   scheduleNextPhysicalTip();
@@ -497,8 +498,39 @@ function handleMenuAction(action, value) {
   if (menuWin) menuWin.close();
 }
 
-ipcMain.on('set-mouse-ignore', (_event, ignore) => {
-  if (win) win.setIgnoreMouseEvents(ignore, { forward: true });
+// A janela do sol deixa o mouse atravessar, exceto sobre o sol e sobre o
+// balão/painel de respiração. Quem decide é este verificador, olhando o
+// cursor pelo sistema: o repasse de mouse do Windows (forward) informa a
+// posição errada em monitor com escala != 100%, e o sol ficava impossível
+// de clicar/arrastar depois de mudar de tela.
+let mouseIgnored = true;
+let interactiveRects = []; // balão/painel visíveis, em px relativos à janela
+let hoverTimer = null;
+
+function setMouseIgnored(ignore) {
+  if (ignore === mouseIgnored || !win || win.isDestroyed()) return;
+  mouseIgnored = ignore;
+  win.setIgnoreMouseEvents(ignore, { forward: true });
+}
+
+function hoverTick() {
+  if (!win || win.isDestroyed()) return;
+  if (dragging) {
+    setMouseIgnored(false);
+    return;
+  }
+  const cursor = screen.getCursorScreenPoint();
+  const pos = getSunPos();
+  const rel = { x: cursor.x - Math.round(pos.x), y: cursor.y - Math.round(pos.y) };
+  const sunRect = { x: SUN_SIDE_OFFSET, y: WIN_H - SUN_VISUAL_TOP_MARGIN, width: SUN_SIZE, height: SUN_SIZE };
+  const overSomething = [sunRect, ...interactiveRects].some(
+    (r) => rel.x >= r.x && rel.x <= r.x + r.width && rel.y >= r.y && rel.y <= r.y + r.height
+  );
+  setMouseIgnored(!overSomething);
+}
+
+ipcMain.on('set-interactive-rects', (_event, rects) => {
+  interactiveRects = Array.isArray(rects) ? rects : [];
 });
 
 ipcMain.on('request-tip', () => {
@@ -604,5 +636,6 @@ app.on('window-all-closed', () => {
   if (physicalTipTimeout) clearTimeout(physicalTipTimeout);
   if (breathingTimeout) clearTimeout(breathingTimeout);
   if (dragTimer) clearInterval(dragTimer);
+  if (hoverTimer) clearInterval(hoverTimer);
   app.quit();
 });
