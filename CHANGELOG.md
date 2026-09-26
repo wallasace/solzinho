@@ -114,6 +114,9 @@ funcionalidade, não releases.
 - Arremesso com física: soltar o sol em movimento continua o movimento
   dele, indo mais devagar aos poucos e quicando nas bordas da tela, até
   parar sozinho. Pegar ele de novo no meio do arremesso cancela.
+- Enquanto está sendo arremessado, o sol fica com uma cara de tonto (😵) e
+  o brilho ao redor pulsa bem sutil (encolhe um pouco e volta) girando
+  bem devagar. Ao parar sozinho, volta ao normal na hora, sem transição.
 - Bounce ao clicar no sol (achata e volta ao normal).
 - Batida na parede durante o arremesso: o sol "amassa" na hora do impacto
   (esguicha pro lado contrário e volta) e toca um "boing" curto cujo

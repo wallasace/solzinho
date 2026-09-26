@@ -44,11 +44,13 @@ html, body {
 }
 
 /* durante o eclipse (moon-mode/breathing/moon-exit) o mesmo brilho vira a
-   coroa solar ao redor do disco escuro da lua */
+   coroa solar ao redor do disco escuro da lua; durante o arremesso
+   (flinging) é o próprio brilho do sol reagindo ao "susto" de ser jogado */
 #sun-wrap.shining #glow,
 #sun-wrap.moon-mode #glow,
 #sun-wrap.breathing #glow,
-#sun-wrap.moon-exit #glow {
+#sun-wrap.moon-exit #glow,
+#sun-wrap.flinging #glow {
   opacity: 1;
 }
 
@@ -72,6 +74,11 @@ html, body {
   animation: ray-spin 6s linear infinite;
 }
 
+/* arremesso: gira bem devagar, bem mais devagar que qualquer outro estado */
+#sun-wrap.flinging #rays {
+  animation: ray-spin 26s linear infinite;
+}
+
 /* no eclipse os raios ficam desligados: só o anel de coroa (#glow-circle),
    sem os raios girando */
 #sun-wrap.moon-mode #rays,
@@ -92,6 +99,11 @@ html, body {
   animation: glow-pulse 1.5s ease-in-out infinite;
 }
 
+/* diminui um pouco e volta — bem mais sutil que o glow-pulse normal */
+#sun-wrap.flinging #glow-circle {
+  animation: fling-glow-pulse 1.6s ease-in-out infinite;
+}
+
 @keyframes ray-spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
@@ -100,6 +112,11 @@ html, body {
 @keyframes glow-pulse {
   0%, 100% { transform: scale(0.92); opacity: 0.65; }
   50% { transform: scale(1.12); opacity: 1; }
+}
+
+@keyframes fling-glow-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.88); opacity: 0.85; }
 }
 
 #sun {

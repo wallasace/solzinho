@@ -177,6 +177,12 @@ com quantos monitores a pessoa tiver, em qualquer escala e arranjo.
   parar sozinho e a caminhada normal retomar. A velocidade é estimada em
   `dragTick()` comparando a posição a cada 16ms, suavizada entre ticks pra
   não ficar nervosa. Arrastar de novo no meio do arremesso cancela ele.
+  Enquanto dura, `#sun-wrap.flinging` troca a cara pra uma de tonto (😵,
+  só troca o texto do `#sun` — não tem partes separadas de rosto pra
+  animar) e o `#glow` (mesmo brilho de outros estados) liga com um pulso
+  bem sutil (encolhe um pouco e volta) e os raios girando bem mais devagar
+  que em qualquer outro estado (26s). Ao parar sozinho, volta pra cara
+  normal na hora, sem transição — não precisa disso, só desliga.
 - **Monitor conectado/desconectado ou mudança de resolução/escala** com o
   app aberto: `keepSunOnScreen()` traz o sol de volta pro monitor mais
   próximo.

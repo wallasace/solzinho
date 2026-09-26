@@ -1,4 +1,7 @@
 const sunWrap = document.getElementById('sun-wrap');
+const sunEl = document.getElementById('sun');
+const SUN_FACE_NORMAL = '🌞';
+const SUN_FACE_FLYING = '😵'; // expressão de tontura enquanto é arremessado
 
 // O balão e o painel de respiração ficam numa janela própria (speech.html),
 // controlada pelo main; daqui só se manda o texto.
@@ -266,6 +269,15 @@ sunWrap.addEventListener('animationend', (event) => {
   }
 });
 
+// Enquanto o arremesso (física de arrastar-e-soltar) está rolando: cara de
+// tonto no lugar do sorriso, e o brilho (mesmo #glow de outros estados)
+// encolhe um pouco e volta, girando bem devagar. Ao parar, sem transição
+// especial de volta — só desliga (o "pode manter como está" do pedido).
+function setFlinging(active) {
+  sunWrap.classList.toggle('flinging', active);
+  sunEl.textContent = active ? SUN_FACE_FLYING : SUN_FACE_NORMAL;
+}
+
 window.solzinho.onInit((settings) => {
   applyLanguage(settings.language || 'pt');
   applyMute(!!settings.muted);
@@ -279,4 +291,5 @@ window.solzinho.onBreathingStart(startBreathing);
 window.solzinho.onBreathingEnd(endBreathing);
 window.solzinho.onLanguageChanged(applyLanguage);
 window.solzinho.onMuteChanged(applyMute);
+window.solzinho.onFlinging(setFlinging);
 window.solzinho.onBounce(playWallBounce);

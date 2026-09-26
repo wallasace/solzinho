@@ -729,6 +729,7 @@ function startFlingIfFast(v) {
   if (Math.hypot(v.x, v.y) < FLING_MIN_SPEED) return;
   flingVel = { ...v };
   pauseWalk('fling');
+  if (win && !win.isDestroyed()) win.webContents.send('flinging', true);
   if (flingTimer) clearInterval(flingTimer);
   flingTimer = setInterval(flingTick, 16);
 }
@@ -773,6 +774,7 @@ function stopFling() {
   if (flingVel && Math.abs(flingVel.x) > 1) direction = flingVel.x > 0 ? 1 : -1;
   flingVel = null;
   resumeWalk('fling');
+  if (win && !win.isDestroyed()) win.webContents.send('flinging', false);
 }
 
 ipcMain.on('drag-end', stopDrag);

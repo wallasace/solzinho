@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('solzinho', {
   onLanguageChanged: (callback) => ipcRenderer.on('language-changed', (_e, lang) => callback(lang)),
   onMuteChanged: (callback) => ipcRenderer.on('mute-changed', (_e, muted) => callback(muted)),
   onBounce: (callback) => ipcRenderer.on('bounce', (_e, data) => callback(data)),
+  onFlinging: (callback) => ipcRenderer.on('flinging', (_e, active) => callback(active)),
   stopBreathing: () => ipcRenderer.send('stop-breathing-request'),
   requestTip: () => ipcRenderer.send('request-tip'),
   bubbleDismissed: () => ipcRenderer.send('bubble-dismissed'),
