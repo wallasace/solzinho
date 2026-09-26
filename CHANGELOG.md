@@ -40,6 +40,11 @@ funcionalidade, não releases.
   andava mas não dava mais pra clicar nem arrastar. A detecção de "mouse em
   cima do sol" dependia do repasse de mouse do Windows, que informa a
   posição errada nesses monitores; agora o app mesmo confere o cursor.
+- Corrigido (de novo): mesmo com o cursor sendo lido certo, depois de
+  levar o sol pro monitor de 150% não dava pra agarrar ele. A causa era um
+  bug do Electron/Windows: a janela levada pra um monitor com outra escala
+  perde o "apertei o botão" do mouse. Um redimensionamento de 1px ao trocar
+  de monitor faz a janela voltar a receber o clique.
 - Funciona com todos os monitores de quem estiver usando: dá pra arrastar
   o sol pra qualquer um. Andando sozinho ele fica no monitor onde está —
   só troca de tela quando arrastado.

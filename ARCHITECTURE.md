@@ -95,6 +95,21 @@ do repasse de mouse do Windows (`forward: true`). Em monitor com escala !=
 100% esse repasse informa a posição errada, o sol nunca "percebia" o mouse
 em cima e ficava impossível de clicar/arrastar depois de mudar de tela.
 
+### Bug do Electron ao trocar de monitor com escala diferente
+
+Uma janela criada num monitor de 100% e levada (com `setBounds`) para um
+de 150% passa a **perder o `mousedown`**: o `mouseup` chega, o `mousedown`
+não, então o arraste nunca começa. Janela criada direto no monitor de 150%
+não tem o problema, e janelas pequenas (120×120) também não — com o
+tamanho da do sol (260×320) acontece sempre. Não é o cálculo de posição:
+foi medido com `GetWindowRect` e com print da tela, e janela, desenho e
+área clicável estavam todos no lugar certo.
+
+O que resolve: um redimensionamento de verdade (1px maior e volta), ou
+esconder e mostrar a janela. Usamos o redimensionamento, que não pisca:
+`setSunBounds()` detecta quando a janela muda de monitor e, assim que
+não estiver mais sendo arrastada, chama `refreshInputAfterDisplayChange()`.
+
 ## Posição do sol e múltiplos monitores
 
 A posição da janela do sol é guardada em `sunPos` (com casas decimais) e

@@ -205,10 +205,34 @@ function getSunPos() {
 
 function setSunBounds(x, y) {
   sunPos = { x, y };
-  win.setBounds({ x: Math.round(x), y: Math.round(y), width: WIN_W, height: WIN_H });
+  const rect = { x: Math.round(x), y: Math.round(y), width: WIN_W, height: WIN_H };
+  win.setBounds(rect);
   // ao cruzar para um monitor com outra escala o Windows pode redimensionar a janela
   const [w, h] = win.getSize();
   if (w !== WIN_W || h !== WIN_H) win.setSize(WIN_W, WIN_H);
+
+  const displayId = screen.getDisplayMatching(rect).id;
+  if (sunDisplayId !== null && displayId !== sunDisplayId) displayChangePending = true;
+  sunDisplayId = displayId;
+  if (displayChangePending && !dragging) refreshInputAfterDisplayChange();
+}
+
+// Bug do Electron/Windows: janela levada para um monitor com outra escala
+// (ex.: 100% -> 150%) passa a perder o "apertei o botão" do mouse — o
+// "soltei" chega, mas o arraste nunca começa. Janela criada direto no outro
+// monitor não tem o problema. Um redimensionamento de verdade (1px e volta)
+// faz o Chromium se reajustar; esconder e mostrar também resolve, mas pisca.
+let sunDisplayId = null;
+let displayChangePending = false;
+
+function refreshInputAfterDisplayChange() {
+  displayChangePending = false;
+  const x = Math.round(sunPos.x);
+  const y = Math.round(sunPos.y);
+  win.setBounds({ x, y, width: WIN_W + 1, height: WIN_H + 1 });
+  setTimeout(() => {
+    if (win && !win.isDestroyed()) setSunBounds(sunPos.x, sunPos.y);
+  }, 50);
 }
 
 function startWalking() {
@@ -540,6 +564,7 @@ function stopDrag() {
   dragStartBounds = null;
   if (dragTimer) clearInterval(dragTimer);
   dragTimer = null;
+  if (displayChangePending && win && !win.isDestroyed()) refreshInputAfterDisplayChange();
 }
 
 ipcMain.on('drag-start', () => {
