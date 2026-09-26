@@ -51,10 +51,27 @@ const FREQ_PROMPT_W = 280;
 const FREQ_PROMPT_H = 150;
 // distância do topo da janela invisível do sol (WIN_H) até o topo visual do
 // sol de verdade: bottom:10px + 96px de altura do #sun-wrap (renderer/style.css)
-const SUN_VISUAL_TOP_MARGIN = 10 + 96;
+const SUN_SIZE = 96;
+const SUN_BOTTOM_MARGIN = 10;
+const SUN_VISUAL_TOP_MARGIN = SUN_BOTTOM_MARGIN + SUN_SIZE;
+const SUN_SIDE_OFFSET = (WIN_W - SUN_SIZE) / 2;
 
 function getSunAnchorTop(sunBounds) {
   return sunBounds.y + WIN_H - SUN_VISUAL_TOP_MARGIN;
+}
+
+// A janela é maior que o sol visível (sobra espaço dos lados e em cima pro
+// balão), então o limite de tela é aplicado ao sol, não à janela — a parte
+// invisível da janela pode sair da tela.
+function clampSunWindowPosition(x, y, area) {
+  const minX = area.x - SUN_SIDE_OFFSET;
+  const maxX = area.x + area.width - WIN_W + SUN_SIDE_OFFSET;
+  const minY = area.y - (WIN_H - SUN_VISUAL_TOP_MARGIN);
+  const maxY = area.y + area.height - WIN_H + SUN_BOTTOM_MARGIN;
+  return {
+    x: Math.round(Math.min(Math.max(x, minX), maxX)),
+    y: Math.round(Math.min(Math.max(y, minY), maxY)),
+  };
 }
 
 function computeFreqPromptPosition(sunBounds, area) {
@@ -172,8 +189,8 @@ function startWalking() {
     const bounds = win.getBounds();
     let nextX = bounds.x + direction * BASE_SPEED;
 
-    const minX = area.x + EDGE_MARGIN;
-    const maxX = area.x + area.width - WIN_W - EDGE_MARGIN;
+    const minX = area.x - SUN_SIDE_OFFSET + EDGE_MARGIN;
+    const maxX = area.x + area.width - WIN_W + SUN_SIDE_OFFSET - EDGE_MARGIN;
 
     if (nextX <= minX) {
       nextX = minX;
@@ -242,7 +259,21 @@ function triggerBubble(kind = 'calm') {
     return;
   }
   pauseWalk('bubble');
+  ensureBubbleRoom();
   win.webContents.send('show-bubble', kind);
+}
+
+// O balão mora na parte invisível da janela, acima e dos lados do sol. Se o
+// sol estiver encostado numa borda, essa parte está fora da tela — então
+// traz a janela inteira pra dentro antes de falar.
+function ensureBubbleRoom() {
+  const bounds = win.getBounds();
+  const area = currentWorkArea();
+  const x = Math.min(Math.max(bounds.x, area.x), area.x + area.width - WIN_W);
+  const y = Math.max(bounds.y, area.y);
+  if (x !== bounds.x || y !== bounds.y) {
+    win.setBounds({ x, y, width: WIN_W, height: WIN_H });
+  }
 }
 
 function showPendingTipIfAny() {
@@ -257,6 +288,7 @@ function startBreathingExercise() {
   if (breathingActive || !win || win.isDestroyed()) return;
   breathingActive = true;
   pauseWalk('breathing');
+  ensureBubbleRoom();
   win.webContents.send('start-breathing', {
     cycleMs: BREATHING_CYCLE_MS,
     cycles: BREATHING_CYCLES,
@@ -441,12 +473,7 @@ ipcMain.on('drag-move', (_event, pos) => {
   const area = screen.getDisplayNearestPoint({ x: pos.screenX, y: pos.screenY }).workArea;
   const dx = pos.screenX - dragStartMouse.screenX;
   const dy = pos.screenY - dragStartMouse.screenY;
-  const minX = area.x;
-  const maxX = area.x + area.width - WIN_W;
-  const minY = area.y;
-  const maxY = area.y + area.height - WIN_H;
-  const x = Math.min(Math.max(Math.round(dragStartBounds.x + dx), minX), maxX);
-  const y = Math.min(Math.max(Math.round(dragStartBounds.y + dy), minY), maxY);
+  const { x, y } = clampSunWindowPosition(dragStartBounds.x + dx, dragStartBounds.y + dy, area);
   win.setBounds({ x, y, width: WIN_W, height: WIN_H });
   repositionFollowerWindows();
 });

@@ -22,6 +22,10 @@ funcionalidade, não releases.
   no main process).
 - Corrigido depois: o arraste não tinha limite nenhum e dava pra perder o
   sol fora da tela — travado dentro da área útil do monitor.
+- Corrigido de novo: o limite era aplicado à janela (bem maior que o sol,
+  por causa do espaço do balão), então o sol parava longe da borda real.
+  Agora o limite é aplicado ao sol visível, no monitor onde ele está, e o
+  sol se afasta da borda só na hora de mostrar o balão.
 
 ## Visual e feedback
 

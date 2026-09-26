@@ -74,9 +74,20 @@ Windows tratar aquela área como barra de título — clique normal e botão
 direito param de funcionar (o SO intercepta o mousedown antes do DOM).
 A solução final: `mousedown`/`mousemove`/`mouseup` no renderer enviam
 posição absoluta do mouse (`screenX`/`screenY`) por IPC; o main process
-calcula o delta e move a janela com `setBounds`. O arraste é travado dentro
-da área útil da tela (`currentWorkArea()`, que já exclui a barra de
-tarefas) — sem isso, dava pra arrastar o sol pra fora da tela e "perdê-lo".
+calcula o delta e move a janela com `setBounds`.
+
+O limite de tela (`clampSunWindowPosition`) é aplicado ao **sol visível**,
+não à janela: a janela tem ~80px invisíveis de cada lado e ~210px em cima
+(espaço do balão), então travar a janela deixava um vão até a borda real.
+A parte invisível pode sair da tela; o sol nunca sai. A área usada é a do
+monitor onde o cursor/sol está (`getDisplayNearestPoint` /
+`getDisplayMatching`), já descontando a barra de tarefas — funciona com
+vários monitores.
+
+Consequência: com o sol encostado numa borda, a área do balão fica fora da
+tela. Por isso `ensureBubbleRoom()` traz a janela inteira pra dentro da tela
+antes de mostrar uma dica ou o exercício de respiração (o sol "dá um passo
+pra dentro" pra falar).
 
 ## Idioma (i18n)
 
