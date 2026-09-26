@@ -117,6 +117,8 @@ funcionalidade, não releases.
 - Enquanto está sendo arremessado, o sol fica com uma cara de tonto (😵) e
   o brilho ao redor pulsa bem sutil (encolhe um pouco e volta) girando
   bem devagar. Ao parar sozinho, volta ao normal na hora, sem transição.
+- Som ao clicar na lua (ou no balão) pra encerrar a respiração — um "puf"
+  de transformação de volta pra sol.
 - Bounce ao clicar no sol (achata e volta ao normal).
 - Batida na parede durante o arremesso: o sol "amassa" na hora do impacto
   (esguicha pro lado contrário e volta) e toca um "boing" curto cujo

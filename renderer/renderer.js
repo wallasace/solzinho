@@ -88,6 +88,33 @@ function playBounceThud(speed) {
   }
 }
 
+function playMoonToSunChime() {
+  if (muted) return;
+  try {
+    const ctx = getAudioCtx();
+    const t0 = ctx.currentTime;
+    // "puf" de transformação: duas notas subindo rápido, como a lua se
+    // desfazendo de volta em sol
+    [660, 1050].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+
+      const start = t0 + i * 0.09;
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(0.16, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.35);
+
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(start);
+      osc.stop(start + 0.4);
+    });
+  } catch {
+    // som é só um extra
+  }
+}
+
 function setState(state) {
   sunWrap.classList.remove('walking', 'idle');
   sunWrap.classList.add(state === 'idle' ? 'idle' : 'walking');
@@ -193,8 +220,12 @@ function endBreathing() {
 
 // clique no balão: fecha a dica, ou encerra o exercício de respiração
 window.solzinho.onSpeechClicked(() => {
-  if (breathingInProgress) window.solzinho.stopBreathing();
-  else hideBubble();
+  if (breathingInProgress) {
+    playMoonToSunChime();
+    window.solzinho.stopBreathing();
+  } else {
+    hideBubble();
+  }
 });
 
 let isDragging = false;
@@ -216,6 +247,7 @@ sunWrap.addEventListener('click', () => {
   if (dragMoved) return;
   playClickBounce();
   if (breathingInProgress) {
+    playMoonToSunChime();
     window.solzinho.stopBreathing();
     return;
   }

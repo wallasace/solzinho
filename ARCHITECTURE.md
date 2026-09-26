@@ -206,12 +206,14 @@ principal atualizar na hora — não precisa reiniciar o app.
 
 ## Som
 
-O "tin-tin-tin" da dica e o "boing" do arremesso batendo na parede são
-sintetizados na hora com a Web Audio API (osciladores simples), não são
-arquivo de áudio — evita ter que embutir/licenciar um asset de som. O
-volume do boing escala com a força do impacto (`speed` mandado por
-`flingTick`). `settings.muted` (menu → 🔇/🔊) desliga os dois; a troca é
-avisada na hora por `mute-changed`, igual ao idioma.
+O "tin-tin-tin" da dica, o "boing" do arremesso batendo na parede e o
+"puf" de transformação (`playMoonToSunChime`, ao clicar na lua/no balão
+pra encerrar a respiração) são sintetizados na hora com a Web Audio API
+(osciladores simples), não são arquivo de áudio — evita ter que
+embutir/licenciar um asset de som. O volume do boing escala com a força
+do impacto (`speed` mandado por `flingTick`). `settings.muted` (menu →
+🔇/🔊) desliga os três; a troca é avisada na hora por `mute-changed`,
+igual ao idioma.
 
 ## Scripts npm
 
