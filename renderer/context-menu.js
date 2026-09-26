@@ -52,6 +52,10 @@ function render(state) {
   toggleMute.addEventListener('click', () => window.menuApi.action('toggle-mute'));
   menu.appendChild(toggleMute);
 
+  const toggleAutoLaunch = el('div', 'item', state.autoLaunch ? T.disableAutoLaunch : T.enableAutoLaunch);
+  toggleAutoLaunch.addEventListener('click', () => window.menuApi.action('toggle-auto-launch'));
+  menu.appendChild(toggleAutoLaunch);
+
   menu.appendChild(el('div', 'divider'));
   menu.appendChild(el('div', 'section-label', T.languageSection));
 

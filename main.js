@@ -51,7 +51,7 @@ const BREATHING_COUNTDOWN_MS = 3000;
 const BREATHING_EXIT_ANIM_MS = 1800; // duração do eclipse-orbit reverso (renderer/style.css)
 
 const MENU_W = 260;
-const MENU_H = 525;
+const MENU_H = 555;
 const FREQ_PROMPT_W = 280;
 const FREQ_PROMPT_H = 150;
 const UPDATE_PROMPT_W = 300;
@@ -152,7 +152,7 @@ function saveSettings() {
 }
 
 const settings = Object.assign(
-  { frequencyMinutes: 30, tipsPaused: false, walking: true, language: 'pt', muted: false },
+  { frequencyMinutes: 30, tipsPaused: false, walking: true, language: 'pt', muted: false, autoLaunch: true },
   loadSettings()
 );
 
@@ -692,6 +692,7 @@ function openContextMenu() {
       frequencyOptions: FREQUENCY_OPTIONS,
       language: settings.language,
       muted: settings.muted,
+      autoLaunch: settings.autoLaunch,
     });
   });
   m.on('blur', () => {
@@ -740,6 +741,11 @@ function handleMenuAction(action, value) {
       settings.muted = !settings.muted;
       saveSettings();
       if (win && !win.isDestroyed()) win.webContents.send('mute-changed', settings.muted);
+      break;
+    case 'toggle-auto-launch':
+      settings.autoLaunch = !settings.autoLaunch;
+      saveSettings();
+      registerAutoLaunch();
       break;
     case 'check-for-updates':
       checkForUpdatesNow();
@@ -950,7 +956,7 @@ function registerAutoLaunch() {
   // só faz sentido para o app instalado (electron-builder); em modo dev,
   // process.execPath aponta pro electron.exe do node_modules, não pro app.
   if (!app.isPackaged) return;
-  app.setLoginItemSettings({ openAtLogin: true, path: process.execPath });
+  app.setLoginItemSettings({ openAtLogin: settings.autoLaunch, path: process.execPath });
 }
 
 // Se um monitor for desconectado, mudar de resolução ou de escala com o app

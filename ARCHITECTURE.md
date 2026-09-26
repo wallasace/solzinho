@@ -261,6 +261,16 @@ sozinho — monta o link de uma issue nova no GitHub já preenchida
 padrão com `shell.openExternal()`; quem relata ainda revisa e clica em
 "Submit" lá.
 
+## Iniciar com o Windows
+
+`registerAutoLaunch()` só faz efeito na versão instalada (`app.isPackaged`
+— em modo dev, `process.execPath` aponta pro `electron.exe` do
+`node_modules`, não pro app de verdade, e registrar isso na inicialização
+do Windows não faria sentido nenhum). O valor em si (`settings.autoLaunch`,
+`true` por padrão) é lido e salvo normalmente também em dev — só o
+`app.setLoginItemSettings()` de fato é pulado. O menu chama
+`registerAutoLaunch()` de novo a cada troca, pra aplicar na hora.
+
 ## Ícone
 
 `build/icon.png` (1024×1024, fundo transparente) é o próprio emoji 🌞

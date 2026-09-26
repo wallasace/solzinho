@@ -55,10 +55,8 @@ npm run build
 Gera um instalador em `dist/Solzinho Setup <versão>.exe`. Rodando esse
 instalador, o Solzinho é instalado na sua conta de usuário (sem precisar de
 admin), ganha atalho no menu iniciar/desktop, e passa a abrir sozinho
-sempre que você liga o computador. Pra desligar isso, é só desmarcar a
-opção equivalente nas configurações de inicialização do Windows
-(`Configurações > Apps > Inicialização`) ou desinstalar pelo painel de
-apps do Windows.
+sempre que você liga o computador. Pra desligar isso, tem a opção
+"🚀 Não iniciar com o Windows" direto no menu (botão direito) do solzinho.
 
 ### Atualização automática
 

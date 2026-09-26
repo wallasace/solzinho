@@ -171,3 +171,5 @@ funcionalidade, não releases.
 - Som ao abrir o menu (botão direito): um pop bem curto e seco.
 - Ícone do app (instalador, atalhos, .exe): o próprio emoji 🌞, gerado
   num canvas a partir dele mesmo, em vez do ícone padrão do Electron.
+- Opção no menu pra escolher se o solzinho inicia com o Windows ou não
+  (antes era sempre ligado, sem jeito de desativar pelo próprio app).
