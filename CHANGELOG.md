@@ -179,3 +179,6 @@ funcionalidade, não releases.
 - Som da batida na parede trocado: em vez do boing/clique seco de antes,
   um toque de marimba quentinho (nota sorteada + harmônico suave, sem
   aspereza nenhuma).
+- Todos os 4 sons do app (dica, batida, transformação, menu) unificados
+  no mesmo "ar" cozy — mesma receita de filtro passa-baixa + onda
+  triangular quentinha, em vez de cada um soar diferente.

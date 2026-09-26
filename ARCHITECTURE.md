@@ -222,16 +222,28 @@ principal atualizar na hora — não precisa reiniciar o app.
 
 ## Som
 
-O "tin-tin-tin" da dica, o toque de "marimba" do arremesso batendo na
-parede (`playBounceThud`), o "puf" de transformação (`playMoonToSunChime`,
-ao clicar na lua/no balão pra encerrar a respiração) e o pop seco do
-botão direito (`playMenuPop`, ao abrir o menu) são sintetizados na hora
-com a Web Audio API (osciladores simples), não são arquivo de áudio —
-evita ter que embutir/licenciar um asset de som. O som da batida sorteia
-uma nota entre um punhadinho de opções agradáveis (G4/A4/B4/C5), com um
-harmônico suave uma oitava acima e um filtro passa-baixa (`BiquadFilter`)
-arredondando a onda triangular — um toque quentinho em vez do boing/
-clique seco de antes; o volume (não o tom) escala com a força do impacto
+Todo som do app é sintetizado na hora com a Web Audio API (osciladores
+simples), nenhum arquivo de áudio — evita ter que embutir/licenciar um
+asset de som. Os quatro (`playChime` da dica, `playBounceThud` da batida
+na parede, `playMoonToSunChime` da lua virando sol, `playMenuPop` do
+botão direito) têm o mesmo "ar" cozy de propósito, através de duas peças
+compartilhadas em `renderer.js`:
+
+- `warmDestination(ctx, cutoff)` — um `BiquadFilter` passa-baixa por onde
+  todo som passa antes do alto-falante. Onda triangular sozinha tem
+  harmônicos agudos que soam "sintético"; o filtro tira essa aspereza.
+- `playWarmNote(ctx, dest, freq, opts)` — uma nota = triangle (corpo) +
+  sine uma oitava acima bem baixinho (brilho suave), os dois passando
+  pelo `warmDestination`. Usada pelo chime da dica, o toque de "marimba"
+  da batida (nota sorteada entre G4/A4/B4/C5, tipo sino de vento) e o
+  puf de transformação — cada um só muda frequência/duração/volume.
+
+O `playMenuPop` fica de fora do `playWarmNote` de propósito: é pra ser
+curto e discreto (pedido explícito — "bem sutil e seco"), então é só um
+osc/gain direto, mas ainda passando pelo mesmo `warmDestination` pra não
+destoar dos outros três.
+
+O volume do toque da batida (não o tom) escala com a força do impacto
 (`speed` mandado por `flingTick`). `settings.muted` (menu → 🔇/🔊) desliga
 os quatro; a troca é avisada na hora por `mute-changed`, igual ao idioma.
 

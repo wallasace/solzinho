@@ -27,28 +27,54 @@ function getAudioCtx() {
   return audioCtx;
 }
 
+// Todo SFX do app passa por aqui: um filtro passa-baixa suave, pra tirar
+// qualquer aspereza das ondas (mesmo triangle/square têm harmônicos agudos
+// que soam "sintético"/mecânico sem isso) — é o que dá aquele ar cozy comum
+// a todos os sons, em vez de cada um soar diferente.
+function warmDestination(ctx, cutoff = 2400) {
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.Q.value = 0.7;
+  filter.frequency.value = cutoff;
+  filter.connect(ctx.destination);
+  return filter;
+}
+
+// Uma notinha quentinha: triangle (corpo) + sine uma oitava acima bem baixinho
+// (brilho suave), ambos passando pelo warmDestination. Serve de base pros
+// chimes de dica/transformação e pro toque da batida na parede.
+function playWarmNote(ctx, dest, freq, { start = 0, gain = 0.16, attack = 0.02, duration = 0.5 } = {}) {
+  const t0 = ctx.currentTime + start;
+  const osc = ctx.createOscillator();
+  const g = ctx.createGain();
+  osc.type = 'triangle';
+  osc.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.linearRampToValueAtTime(gain, t0 + attack);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+  osc.connect(g).connect(dest);
+  osc.start(t0);
+  osc.stop(t0 + duration + 0.02);
+
+  const overtone = ctx.createOscillator();
+  const overtoneGain = ctx.createGain();
+  overtone.type = 'sine';
+  overtone.frequency.value = freq * 2;
+  overtoneGain.gain.setValueAtTime(0.0001, t0);
+  overtoneGain.gain.linearRampToValueAtTime(gain * 0.3, t0 + attack);
+  overtoneGain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration * 0.7);
+  overtone.connect(overtoneGain).connect(dest);
+  overtone.start(t0);
+  overtone.stop(t0 + duration);
+}
+
 function playChime() {
   if (muted) return;
   try {
     const ctx = getAudioCtx();
-    const notes = [880, 1108.7, 1318.5]; // A5, C#6, E6 - um "tin-tin-tin" suave
-    const startTime = ctx.currentTime;
-
-    notes.forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = freq;
-
-      const noteStart = startTime + i * 0.11;
-      gain.gain.setValueAtTime(0, noteStart);
-      gain.gain.linearRampToValueAtTime(0.18, noteStart + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, noteStart + 0.6);
-
-      osc.connect(gain).connect(ctx.destination);
-      osc.start(noteStart);
-      osc.stop(noteStart + 0.65);
-    });
+    const dest = warmDestination(ctx, 2600);
+    const notes = [880, 1108.7, 1318.5]; // A5, C#6, E6 — um "tin-tin-tin" quentinho
+    notes.forEach((freq, i) => playWarmNote(ctx, dest, freq, { start: i * 0.11, gain: 0.15, duration: 0.6 }));
   } catch {
     // som é só um extra; se o áudio falhar, a dica continua funcionando
   }
@@ -58,42 +84,18 @@ function playBounceThud(speed) {
   if (muted) return;
   try {
     const ctx = getAudioCtx();
-    const t0 = ctx.currentTime;
-    // toque de "marimba" quentinho em vez do boing/clique seco de antes: uma
-    // nota agradável (sorteada entre umas poucas, tipo sino de vento) com um
-    // harmônico suave uma oitava acima pro corpo, e um filtro passa-baixa
-    // arredondando a onda triangular pra tirar qualquer aspereza
+    const dest = warmDestination(ctx, 2200);
+    // toque de "marimba" quentinho: uma nota agradável (sorteada entre umas
+    // poucas, tipo sino de vento), com o volume (não o tom) escalando com a
+    // força do impacto
     const strength = Math.min(speed / 900, 1);
     const notes = [392.0, 440.0, 493.88, 523.25]; // G4, A4, B4, C5
     const freq = notes[Math.floor(Math.random() * notes.length)];
-    const duration = 0.28 + strength * 0.12;
-
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.value = 2200;
-    filter.connect(ctx.destination);
-
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.value = freq;
-    gain.gain.setValueAtTime(0.0001, t0);
-    gain.gain.linearRampToValueAtTime(0.1 + strength * 0.08, t0 + 0.008);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
-    osc.connect(gain).connect(filter);
-    osc.start(t0);
-    osc.stop(t0 + duration + 0.02);
-
-    const overtone = ctx.createOscillator();
-    const overtoneGain = ctx.createGain();
-    overtone.type = 'sine';
-    overtone.frequency.value = freq * 2;
-    overtoneGain.gain.setValueAtTime(0.0001, t0);
-    overtoneGain.gain.linearRampToValueAtTime(0.04 + strength * 0.03, t0 + 0.008);
-    overtoneGain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration * 0.7);
-    overtone.connect(overtoneGain).connect(filter);
-    overtone.start(t0);
-    overtone.stop(t0 + duration);
+    playWarmNote(ctx, dest, freq, {
+      gain: 0.1 + strength * 0.08,
+      attack: 0.008,
+      duration: 0.28 + strength * 0.12,
+    });
   } catch {
     // som é só um extra
   }
@@ -103,8 +105,10 @@ function playMenuPop() {
   if (muted) return;
   try {
     const ctx = getAudioCtx();
+    const dest = warmDestination(ctx, 1800);
     const t0 = ctx.currentTime;
-    // pop seco e curto: sobe rapidinho e morre na hora, sem "corpo" nenhum
+    // pop curto e discreto, mas redondo — sem harmônico, sem "corpo" grande,
+    // só o filtro já tira a aspereza que a onda triangular teria sozinha
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = 'triangle';
@@ -112,10 +116,10 @@ function playMenuPop() {
     osc.frequency.exponentialRampToValueAtTime(700, t0 + 0.02);
     gain.gain.setValueAtTime(0.001, t0);
     gain.gain.linearRampToValueAtTime(0.07, t0 + 0.006);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.05);
-    osc.connect(gain).connect(ctx.destination);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.06);
+    osc.connect(gain).connect(dest);
     osc.start(t0);
-    osc.stop(t0 + 0.06);
+    osc.stop(t0 + 0.07);
   } catch {
     // som é só um extra
   }
@@ -125,24 +129,10 @@ function playMoonToSunChime() {
   if (muted) return;
   try {
     const ctx = getAudioCtx();
-    const t0 = ctx.currentTime;
-    // "puf" de transformação: duas notas subindo rápido, como a lua se
+    const dest = warmDestination(ctx, 2400);
+    // "puf" de transformação: duas notas subindo, quentinhas, como a lua se
     // desfazendo de volta em sol
-    [660, 1050].forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.value = freq;
-
-      const start = t0 + i * 0.09;
-      gain.gain.setValueAtTime(0, start);
-      gain.gain.linearRampToValueAtTime(0.16, start + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.35);
-
-      osc.connect(gain).connect(ctx.destination);
-      osc.start(start);
-      osc.stop(start + 0.4);
-    });
+    [660, 1050].forEach((freq, i) => playWarmNote(ctx, dest, freq, { start: i * 0.09, gain: 0.15, duration: 0.4 }));
   } catch {
     // som é só um extra
   }
