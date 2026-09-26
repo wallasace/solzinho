@@ -169,3 +169,5 @@ funcionalidade, não releases.
   preenchida com versão, sistema e idioma (não manda nada sozinho — só
   prepara, a pessoa ainda revisa e envia).
 - Som ao abrir o menu (botão direito): um pop bem curto e seco.
+- Ícone do app (instalador, atalhos, .exe): o próprio emoji 🌞, gerado
+  num canvas a partir dele mesmo, em vez do ícone padrão do Electron.

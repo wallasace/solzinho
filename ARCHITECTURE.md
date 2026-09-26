@@ -261,6 +261,23 @@ sozinho — monta o link de uma issue nova no GitHub já preenchida
 padrão com `shell.openExternal()`; quem relata ainda revisa e clica em
 "Submit" lá.
 
+## Ícone
+
+`build/icon.png` (1024×1024, fundo transparente) é o próprio emoji 🌞
+desenhado num `<canvas>` e exportado via `toDataURL()` — não é um asset
+de terceiros, é gerado a partir do mesmo emoji que o app usa. Serve pra
+duas coisas: o `electron-builder` converte ele automaticamente pro `.ico`
+do instalador/atalhos (`build.win.icon` em `package.json`; é assim que
+o ícone aparece no `.exe`, no menu iniciar e na área de trabalho), e a
+janela do sol usa o mesmo arquivo direto (`icon:` no `BrowserWindow`) pra
+ficar consistente também em modo desenvolvimento (Alt+Tab, gerenciador de
+tarefas) — mesmo com `skipTaskbar: true` não aparecendo na barra de
+tarefas normalmente.
+
+Um detalhe de exportar via `<canvas>` em vez de `capturePage()`: a
+segunda não preserva transparência (devolve fundo branco sólido mesmo
+com a janela `transparent: true`), o canvas sim.
+
 ## Scripts npm
 
 - `npm start` — roda em modo desenvolvimento (`electron .`)
