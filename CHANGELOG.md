@@ -45,6 +45,12 @@ funcionalidade, não releases.
   bug do Electron/Windows: a janela levada pra um monitor com outra escala
   perde o "apertei o botão" do mouse. Um redimensionamento de 1px ao trocar
   de monitor faz a janela voltar a receber o clique.
+- Corrigido: clicar no sol encostado numa borda fazia ele "pular" pra
+  dentro (pra abrir espaço pro balão). O balão agora tem janela própria e
+  se posiciona sozinho — abaixo do sol se não houver espaço em cima, ou
+  deslocado pro lado na borda. O sol fica sempre onde você deixou.
+- Corrigido: depois de abrir o menu uma vez, abrir de novo podia falhar (o
+  menu antigo, ao terminar de fechar, "desligava" o novo).
 - Funciona com todos os monitores de quem estiver usando: dá pra arrastar
   o sol pra qualquer um. Andando sozinho ele fica no monitor onde está —
   só troca de tela quando arrastado.
@@ -94,6 +100,10 @@ funcionalidade, não releases.
   funcionava clicando no painel de texto).
 - Dicas que "quiserem" aparecer durante o exercício esperam ele terminar,
   reaproveitando o mesmo mecanismo de dica pendente.
+
+- O sol vira lua no modo respiração: durante a contagem regressiva ele
+  rodopia e encolhe enquanto uma lua 🌛 com brilho azulado surge; é a lua
+  que respira; no fim ela volta a ser sol.
 
 ## Dois ritmos de dica
 

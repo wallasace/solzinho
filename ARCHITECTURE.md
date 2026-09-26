@@ -8,9 +8,33 @@ transparentes e sem moldura — cada uma é uma peça visual separada, não uma
 
 | Janela | Arquivo | Quando existe |
 |---|---|---|
-| Sol (principal) | `renderer/index.html` | Sempre; contém o sol, a bolha de dica e o painel de respiração |
+| Sol (principal) | `renderer/index.html` | Sempre; contém o sol (e a lua do modo respiração) |
+| Balão | `renderer/speech.html` | Enquanto há dica ou exercício de respiração na tela |
 | Menu (botão direito) | `renderer/context-menu.html` | Enquanto o menu está aberto |
 | Frequência personalizada | `renderer/frequency-prompt.html` | Enquanto essa janela está aberta |
+
+As janelas secundárias (balão, menu, frequência) são **criadas ao abrir e
+destruídas ao fechar**, sempre já no monitor do sol — nascer direto no
+monitor certo evita o bug do Electron de perder clique ao trocar de monitor
+(ver abaixo). Cada uma só mexe no estado global (`menuWin`, `speechWin`...)
+se ainda for a janela atual: antes, o `closed` assíncrono de um menu antigo
+apagava a referência do menu novo, que ficava órfão e o menu parava de abrir.
+
+### Balão (`speech.html`)
+
+O renderer do sol decide o texto (dica sorteada, fase da respiração) e manda
+por IPC (`speech-show` / `speech-update` / `speech-hide`); o main cria a
+janela, o balão mede o próprio tamanho (`speech-size`) e o main o posiciona
+em volta do sol (`computeSpeechPlacement`): acima dele; abaixo, se não há
+espaço em cima; deslocado pro lado quando o sol está na borda, com a
+"pontinha" sempre apontando pro sol. O sol nunca se move pra abrir espaço.
+
+### Modo respiração: sol vira lua
+
+Classes no `#sun-wrap`: `moon-mode` (sol rodopia e some, lua 🌛 surge —
+durante a contagem regressiva), `breathing` (a lua infla/esvazia em ciclos
+de 16s) e `moon-exit` (volta pro sol). Os cliques são ouvidos no
+`#sun-wrap`, não no `#sun`, pra funcionarem também sobre a lua.
 
 Todas usam `transparent: true`, `frame: false`, `alwaysOnTop: true` (nível
 `screen-saver`, o mais alto do Electron) e `skipTaskbar: true`. A janela do
@@ -34,9 +58,9 @@ enquanto uma delas está aberta, `repositionFollowerWindows()` os realinha
 em tempo real.
 
 Ponto de atenção: a janela do sol (`WIN_H = 320`) é bem maior que o sol
-visível (`96px` de altura, ancorado no rodapé da janela) — ela precisa desse
-espaço extra pra caber a bolha de dica crescendo pra cima sem cortar. Por
-isso existe `SUN_VISUAL_TOP_MARGIN` / `getSunAnchorTop()`: sem isso, quem
+visível (`96px` de altura, ancorado no rodapé da janela) — herança de
+quando o balão morava nela. Por isso existe `SUN_VISUAL_TOP_MARGIN` /
+`getSunAnchorTop()` / `sunVisualRect()`: sem isso, quem
 ancora no sol acaba ancorando no topo da janela invisível, bem acima de
 onde o sol realmente está.
 
@@ -85,10 +109,8 @@ nenhum botão pressionado — o `mouseup` pode se perder na troca de tela.
 ## Onde a janela do sol aceita clique
 
 A janela do sol deixa o mouse atravessar (`setIgnoreMouseEvents(true)`),
-exceto sobre o sol e sobre o balão/painel de respiração quando visíveis.
-Quem decide é `hoverTick()` no main, a cada 50ms, comparando
-`screen.getCursorScreenPoint()` com essas áreas (o renderer informa onde
-estão balão e painel via `set-interactive-rects`).
+exceto sobre o sol. Quem decide é `hoverTick()` no main, a cada 50ms,
+comparando `screen.getCursorScreenPoint()` com `sunVisualRect()`.
 
 A versão anterior usava `mouseenter`/`mouseleave` no renderer, que dependem
 do repasse de mouse do Windows (`forward: true`). Em monitor com escala !=
@@ -135,12 +157,8 @@ O limite de tela (`clampSunWindowPosition`) é aplicado ao **sol visível**,
 não à janela: a janela tem ~80px invisíveis de cada lado e ~210px em cima
 (espaço do balão), então travar a janela deixava um vão até a borda real.
 A parte invisível pode sair da tela; o sol nunca sai. A barra de tarefas
-é sempre respeitada (usa-se `workArea`, não `bounds`).
-
-Consequência: com o sol encostado numa borda, a área do balão fica fora da
-tela. Por isso `ensureBubbleRoom()` traz a janela inteira pra dentro da tela
-antes de mostrar uma dica ou o exercício de respiração (o sol "dá um passo
-pra dentro" pra falar).
+é sempre respeitada (usa-se `workArea`, não `bounds`). O balão, por ter
+janela própria, se ajusta à borda sozinho — o sol não se move pra falar.
 
 ## Idioma (i18n)
 

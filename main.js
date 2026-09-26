@@ -108,6 +108,8 @@ function repositionFollowerWindows() {
     const { x, y } = computeMenuPosition(sunBounds, area);
     menuWin.setBounds({ x, y, width: MENU_W, height: MENU_H });
   }
+
+  placeSpeech();
 }
 
 function settingsPath() {
@@ -314,20 +316,125 @@ function triggerBubble(kind = 'calm') {
     return;
   }
   pauseWalk('bubble');
-  ensureBubbleRoom();
   win.webContents.send('show-bubble', kind);
 }
 
-// O balão mora na parte invisível da janela, acima e dos lados do sol. Se o
-// sol estiver encostado numa borda, essa parte está fora da tela — então
-// traz a janela inteira pra dentro antes de falar.
-function ensureBubbleRoom() {
+// ---- Janela do balão (dica / painel de respiração) ----
+// O balão tem janela própria, criada ao aparecer e destruída ao sumir, e se
+// posiciona em volta do sol: acima dele, ou abaixo se não houver espaço em
+// cima, e deslocado pro lado quando o sol está na borda. Assim o sol nunca
+// precisa sair do lugar pra falar. Criar a janela a cada vez, já no monitor
+// do sol, também evita o bug do Electron de perder o clique ao trocar de
+// monitor com outra escala.
+const SPEECH_MARGIN = 14; // margem transparente em volta do cartão (sombra/pontinha)
+const SPEECH_GAP = 10; // distância entre o cartão e o sol
+let speechWin = null;
+let speechCardSize = null;
+let speechAnimatePending = false;
+
+function sunVisualRect() {
   const pos = getSunPos();
-  const area = currentWorkArea();
-  const x = Math.min(Math.max(pos.x, area.x), area.x + area.width - WIN_W);
-  const y = Math.max(pos.y, area.y);
-  if (x !== pos.x || y !== pos.y) setSunBounds(x, y);
+  return {
+    x: pos.x + SUN_SIDE_OFFSET,
+    y: pos.y + WIN_H - SUN_VISUAL_TOP_MARGIN,
+    width: SUN_SIZE,
+    height: SUN_SIZE,
+  };
 }
+
+function computeSpeechPlacement() {
+  const sun = sunVisualRect();
+  const area = currentWorkArea();
+  const W = speechCardSize.width + 2 * SPEECH_MARGIN;
+  const H = speechCardSize.height + 2 * SPEECH_MARGIN;
+  const sunCenterX = sun.x + sun.width / 2;
+
+  let x = Math.round(sunCenterX - W / 2);
+  x = Math.min(Math.max(x, area.x), area.x + area.width - W);
+
+  let side = 'above';
+  let y = Math.round(sun.y - SPEECH_GAP - speechCardSize.height - SPEECH_MARGIN);
+  if (y < area.y) {
+    side = 'below';
+    y = Math.round(sun.y + sun.height + SPEECH_GAP - SPEECH_MARGIN);
+    y = Math.min(y, area.y + area.height - H);
+  }
+
+  // a pontinha aponta pro sol mesmo com o cartão deslocado pro lado
+  const tailX = Math.min(Math.max(sunCenterX - (x + SPEECH_MARGIN), 22), speechCardSize.width - 22);
+  return { bounds: { x, y, width: W, height: H }, side, tailX };
+}
+
+function placeSpeech() {
+  if (!speechWin || speechWin.isDestroyed() || !speechCardSize) return;
+  const p = computeSpeechPlacement();
+  speechWin.setBounds(p.bounds);
+  speechWin.webContents.send('speech-placement', { side: p.side, tailX: p.tailX, animate: speechAnimatePending });
+  speechAnimatePending = false;
+  if (!speechWin.isVisible()) speechWin.showInactive();
+}
+
+function showSpeech(content) {
+  speechAnimatePending = true;
+  if (speechWin && !speechWin.isDestroyed()) {
+    speechWin.webContents.send('speech-content', content);
+    return;
+  }
+  speechCardSize = null;
+  const sun = sunVisualRect();
+  const s = new BrowserWindow({
+    x: Math.round(sun.x),
+    y: Math.round(sun.y),
+    width: 200,
+    height: 100,
+    show: false,
+    transparent: true,
+    frame: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    hasShadow: false,
+    focusable: false,
+    webPreferences: {
+      preload: path.join(__dirname, 'renderer', 'speech-preload.js'),
+      contextIsolation: true,
+    },
+  });
+  speechWin = s;
+  s.setAlwaysOnTop(true, 'screen-saver');
+  s.loadFile(path.join(__dirname, 'renderer', 'speech.html'));
+  s.webContents.once('did-finish-load', () => {
+    if (!s.isDestroyed()) s.webContents.send('speech-content', content);
+  });
+  s.on('closed', () => {
+    if (speechWin === s) {
+      speechWin = null;
+      speechCardSize = null;
+    }
+  });
+}
+
+function hideSpeech() {
+  if (!speechWin || speechWin.isDestroyed()) return;
+  const s = speechWin;
+  speechWin = null;
+  speechCardSize = null;
+  s.destroy();
+}
+
+ipcMain.on('speech-show', (_event, content) => showSpeech(content));
+ipcMain.on('speech-update', (_event, content) => {
+  if (speechWin && !speechWin.isDestroyed()) speechWin.webContents.send('speech-update', content);
+});
+ipcMain.on('speech-hide', hideSpeech);
+ipcMain.on('speech-size', (event, size) => {
+  if (!speechWin || event.sender !== speechWin.webContents) return;
+  speechCardSize = size;
+  placeSpeech();
+});
+ipcMain.on('speech-click', () => {
+  if (win && !win.isDestroyed()) win.webContents.send('speech-clicked');
+});
 
 function showPendingTipIfAny() {
   if (pendingTip && !isBusy()) {
@@ -341,7 +448,6 @@ function startBreathingExercise() {
   if (breathingActive || !win || win.isDestroyed()) return;
   breathingActive = true;
   pauseWalk('breathing');
-  ensureBubbleRoom();
   win.webContents.send('start-breathing', {
     cycleMs: BREATHING_CYCLE_MS,
     cycles: BREATHING_CYCLES,
@@ -361,7 +467,7 @@ function endBreathingExercise() {
 }
 
 function openCustomFrequencyPrompt() {
-  if (freqPromptWin) {
+  if (freqPromptWin && !freqPromptWin.isDestroyed()) {
     freqPromptWin.focus();
     return;
   }
@@ -371,7 +477,7 @@ function openCustomFrequencyPrompt() {
 
   pauseWalk('freqPrompt');
 
-  freqPromptWin = new BrowserWindow({
+  const f = new BrowserWindow({
     width: FREQ_PROMPT_W,
     height: FREQ_PROMPT_H,
     x,
@@ -387,20 +493,21 @@ function openCustomFrequencyPrompt() {
       contextIsolation: true,
     },
   });
-  freqPromptWin.setAlwaysOnTop(true, 'screen-saver');
-  freqPromptWin.loadFile(path.join(__dirname, 'renderer', 'frequency-prompt.html'));
-  freqPromptWin.webContents.once('did-finish-load', () => {
-    if (freqPromptWin) {
-      freqPromptWin.webContents.send('current-frequency', {
-        minutes: settings.frequencyMinutes,
-        language: settings.language,
-      });
-    }
+  freqPromptWin = f;
+  f.setAlwaysOnTop(true, 'screen-saver');
+  f.loadFile(path.join(__dirname, 'renderer', 'frequency-prompt.html'));
+  f.webContents.once('did-finish-load', () => {
+    if (f.isDestroyed()) return;
+    f.webContents.send('current-frequency', {
+      minutes: settings.frequencyMinutes,
+      language: settings.language,
+    });
   });
-  freqPromptWin.on('blur', () => {
-    if (freqPromptWin) freqPromptWin.close();
+  f.on('blur', () => {
+    if (!f.isDestroyed()) f.close();
   });
-  freqPromptWin.on('closed', () => {
+  f.on('closed', () => {
+    if (freqPromptWin !== f) return;
     freqPromptWin = null;
     resumeWalk('freqPrompt');
     showPendingTipIfAny();
@@ -408,8 +515,13 @@ function openCustomFrequencyPrompt() {
 }
 
 function openContextMenu() {
-  if (menuWin) {
-    menuWin.close();
+  // Fecha o menu anterior na hora (destroy, não close): o close() é
+  // assíncrono, e o "closed" do menu antigo chegava depois de o novo já ter
+  // sido criado — e apagava a referência do novo, deixando-o órfão.
+  if (menuWin && !menuWin.isDestroyed()) {
+    const old = menuWin;
+    menuWin = null;
+    old.destroy();
   }
 
   const area = currentWorkArea();
@@ -418,7 +530,7 @@ function openContextMenu() {
 
   pauseWalk('menu');
 
-  menuWin = new BrowserWindow({
+  const m = new BrowserWindow({
     width: MENU_W,
     height: MENU_H,
     x,
@@ -434,11 +546,12 @@ function openContextMenu() {
       contextIsolation: true,
     },
   });
-  menuWin.setAlwaysOnTop(true, 'screen-saver');
-  menuWin.loadFile(path.join(__dirname, 'renderer', 'context-menu.html'));
-  menuWin.webContents.once('did-finish-load', () => {
-    if (!menuWin) return;
-    menuWin.webContents.send('menu-state', {
+  menuWin = m;
+  m.setAlwaysOnTop(true, 'screen-saver');
+  m.loadFile(path.join(__dirname, 'renderer', 'context-menu.html'));
+  m.webContents.once('did-finish-load', () => {
+    if (m.isDestroyed()) return;
+    m.webContents.send('menu-state', {
       tipsPaused: settings.tipsPaused,
       walking: settings.walking,
       frequencyMinutes: settings.frequencyMinutes,
@@ -447,10 +560,12 @@ function openContextMenu() {
       language: settings.language,
     });
   });
-  menuWin.on('blur', () => {
-    if (menuWin) menuWin.close();
+  m.on('blur', () => {
+    if (!m.isDestroyed()) m.close();
   });
-  menuWin.on('closed', () => {
+  // cada janela só mexe no estado se ainda for o menu atual
+  m.on('closed', () => {
+    if (menuWin !== m) return;
     menuWin = null;
     resumeWalk('menu');
     showPendingTipIfAny();
@@ -504,7 +619,6 @@ function handleMenuAction(action, value) {
 // posição errada em monitor com escala != 100%, e o sol ficava impossível
 // de clicar/arrastar depois de mudar de tela.
 let mouseIgnored = true;
-let interactiveRects = []; // balão/painel visíveis, em px relativos à janela
 let hoverTimer = null;
 
 function setMouseIgnored(ignore) {
@@ -519,19 +633,11 @@ function hoverTick() {
     setMouseIgnored(false);
     return;
   }
-  const cursor = screen.getCursorScreenPoint();
-  const pos = getSunPos();
-  const rel = { x: cursor.x - Math.round(pos.x), y: cursor.y - Math.round(pos.y) };
-  const sunRect = { x: SUN_SIDE_OFFSET, y: WIN_H - SUN_VISUAL_TOP_MARGIN, width: SUN_SIZE, height: SUN_SIZE };
-  const overSomething = [sunRect, ...interactiveRects].some(
-    (r) => rel.x >= r.x && rel.x <= r.x + r.width && rel.y >= r.y && rel.y <= r.y + r.height
-  );
-  setMouseIgnored(!overSomething);
+  const c = screen.getCursorScreenPoint();
+  const sun = sunVisualRect();
+  const overSun = c.x >= sun.x && c.x <= sun.x + sun.width && c.y >= sun.y && c.y <= sun.y + sun.height;
+  setMouseIgnored(!overSun);
 }
-
-ipcMain.on('set-interactive-rects', (_event, rects) => {
-  interactiveRects = Array.isArray(rects) ? rects : [];
-});
 
 ipcMain.on('request-tip', () => {
   if (tipTimeout) clearTimeout(tipTimeout);

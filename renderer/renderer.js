@@ -1,20 +1,16 @@
 const sunWrap = document.getElementById('sun-wrap');
-const sunEl = document.getElementById('sun');
-const bubbleEl = document.getElementById('bubble');
-const bubbleTextEl = document.getElementById('bubble-text');
-const breathPanelEl = document.getElementById('breath-panel');
-const breathPhaseEl = document.getElementById('breath-phase');
-const breathHintEl = document.getElementById('breath-hint');
 
+// O balão e o painel de respiração ficam numa janela própria (speech.html),
+// controlada pelo main; daqui só se manda o texto.
 let currentLanguage = 'pt';
 let lastCalmMessage = null;
 let lastPhysicalMessage = null;
 let bubbleHideTimer = null;
+let bubbleVisible = false;
 let audioCtx = null;
 
 function applyLanguage(lang) {
   currentLanguage = I18N[lang] ? lang : 'pt';
-  breathHintEl.textContent = I18N[currentLanguage].breathHint;
 }
 
 function playChime() {
@@ -56,22 +52,17 @@ function setFacing(direction) {
 
 function showBubble(kind) {
   const pool = (kind === 'physical' ? PHYSICAL_MESSAGES : MESSAGES)[currentLanguage];
+  let text;
   if (kind === 'physical') {
     lastPhysicalMessage = pickMessage(pool, lastPhysicalMessage);
-    bubbleTextEl.textContent = lastPhysicalMessage;
+    text = lastPhysicalMessage;
   } else {
     lastCalmMessage = pickMessage(pool, lastCalmMessage);
-    bubbleTextEl.textContent = lastCalmMessage;
+    text = lastCalmMessage;
   }
 
-  // reinicia as animações mesmo se o balão já estiver visível (ex.: pediu outra dica na hora)
-  bubbleEl.classList.remove('visible');
-  bubbleTextEl.classList.remove('text-in');
-  void bubbleEl.offsetWidth;
-
-  bubbleEl.classList.remove('hidden');
-  bubbleEl.classList.add('visible');
-  bubbleTextEl.classList.add('text-in');
+  bubbleVisible = true;
+  window.solzinho.speechShow({ kind: 'tip', text });
   sunWrap.classList.add('shining');
   playChime();
 
@@ -80,33 +71,14 @@ function showBubble(kind) {
 }
 
 function hideBubble() {
-  bubbleEl.classList.remove('visible');
-  bubbleEl.classList.add('hidden');
+  if (!bubbleVisible) return;
+  bubbleVisible = false;
+  if (bubbleHideTimer) clearTimeout(bubbleHideTimer);
+  bubbleHideTimer = null;
   sunWrap.classList.remove('shining');
-  reportInteractiveRects();
+  if (!breathingInProgress) window.solzinho.speechHide();
   window.solzinho.bubbleDismissed();
 }
-
-// Informa ao main onde estão o balão e o painel de respiração quando visíveis,
-// pra essas áreas serem clicáveis (o resto da janela deixa o mouse passar).
-function reportInteractiveRects() {
-  const rects = [bubbleEl, breathPanelEl]
-    .filter((el) => el.classList.contains('visible'))
-    .map((el) => {
-      const r = el.getBoundingClientRect();
-      return { x: r.left, y: r.top, width: r.width, height: r.height };
-    });
-  window.solzinho.setInteractiveRects(rects);
-}
-
-// o tamanho real só existe depois da animação de entrada (que começa pequena)
-bubbleEl.addEventListener('animationend', reportInteractiveRects);
-breathPanelEl.addEventListener('animationend', reportInteractiveRects);
-
-bubbleEl.addEventListener('click', () => {
-  if (bubbleHideTimer) clearTimeout(bubbleHideTimer);
-  hideBubble();
-});
 
 let breathPhaseTimer = null;
 let breathCountdownTimer = null;
@@ -118,7 +90,7 @@ function beginBreathingCycle(cycleMs) {
   let phaseIndex = 0;
 
   const setPhase = () => {
-    breathPhaseEl.textContent = phases[phaseIndex % phases.length];
+    window.solzinho.speechUpdate({ text: phases[phaseIndex % phases.length] });
     phaseIndex += 1;
   };
 
@@ -127,25 +99,30 @@ function beginBreathingCycle(cycleMs) {
   sunWrap.classList.add('breathing');
 }
 
+let moonExitTimer = null;
+
 function startBreathing({ cycleMs, countdownMs }) {
+  hideBubble(); // se tinha uma dica na tela, o exercício toma o lugar dela
   breathingInProgress = true;
   if (breathPhaseTimer) clearInterval(breathPhaseTimer);
   if (breathCountdownTimer) clearInterval(breathCountdownTimer);
   breathPhaseTimer = null;
   breathCountdownTimer = null;
   sunWrap.classList.remove('breathing');
-  breathPanelEl.classList.remove('visible');
-  void breathPanelEl.offsetWidth; // reinicia as animações do zero
 
+  // o sol vira lua durante a contagem regressiva
+  if (moonExitTimer) clearTimeout(moonExitTimer);
+  sunWrap.classList.remove('moon-exit');
+  sunWrap.classList.add('moon-mode');
+
+  const T = I18N[currentLanguage];
   let secondsLeft = Math.round(countdownMs / 1000);
-  breathPhaseEl.textContent = I18N[currentLanguage].getReady(secondsLeft);
-  breathPanelEl.classList.remove('hidden');
-  breathPanelEl.classList.add('visible');
+  window.solzinho.speechShow({ kind: 'breath', text: T.getReady(secondsLeft), hint: T.breathHint });
 
   breathCountdownTimer = setInterval(() => {
     secondsLeft -= 1;
     if (secondsLeft > 0) {
-      breathPhaseEl.textContent = I18N[currentLanguage].getReady(secondsLeft);
+      window.solzinho.speechUpdate({ text: T.getReady(secondsLeft) });
       return;
     }
     clearInterval(breathCountdownTimer);
@@ -160,14 +137,17 @@ function endBreathing() {
   if (breathCountdownTimer) clearInterval(breathCountdownTimer);
   breathPhaseTimer = null;
   breathCountdownTimer = null;
-  sunWrap.classList.remove('breathing');
-  breathPanelEl.classList.remove('visible');
-  breathPanelEl.classList.add('hidden');
-  reportInteractiveRects();
+  sunWrap.classList.remove('breathing', 'moon-mode');
+  // a lua volta a ser sol (animação moon-exit no CSS)
+  sunWrap.classList.add('moon-exit');
+  moonExitTimer = setTimeout(() => sunWrap.classList.remove('moon-exit'), 1700);
+  window.solzinho.speechHide();
 }
 
-breathPanelEl.addEventListener('click', () => {
-  window.solzinho.stopBreathing();
+// clique no balão: fecha a dica, ou encerra o exercício de respiração
+window.solzinho.onSpeechClicked(() => {
+  if (breathingInProgress) window.solzinho.stopBreathing();
+  else hideBubble();
 });
 
 let isDragging = false;
@@ -175,7 +155,7 @@ let dragMoved = false;
 let dragStart = null;
 const DRAG_THRESHOLD = 4;
 
-sunEl.addEventListener('click', () => {
+sunWrap.addEventListener('click', () => {
   if (dragMoved) return;
   if (breathingInProgress) {
     window.solzinho.stopBreathing();
@@ -184,7 +164,7 @@ sunEl.addEventListener('click', () => {
   window.solzinho.requestTip();
 });
 
-sunEl.addEventListener('mousedown', (event) => {
+sunWrap.addEventListener('mousedown', (event) => {
   if (event.button !== 0) return;
   isDragging = true;
   dragMoved = false;
@@ -213,7 +193,7 @@ window.addEventListener('mousemove', (event) => {
 
 window.addEventListener('mouseup', endDrag);
 
-sunEl.addEventListener('contextmenu', (event) => {
+sunWrap.addEventListener('contextmenu', (event) => {
   event.preventDefault();
   window.solzinho.openContextMenu();
 });
