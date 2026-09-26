@@ -8,22 +8,32 @@ let lastPhysicalMessage = null;
 let bubbleHideTimer = null;
 let bubbleVisible = false;
 let audioCtx = null;
+let muted = false;
 
 function applyLanguage(lang) {
   currentLanguage = I18N[lang] ? lang : 'pt';
 }
 
-function playChime() {
-  try {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+function applyMute(value) {
+  muted = value;
+}
 
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function playChime() {
+  if (muted) return;
+  try {
+    const ctx = getAudioCtx();
     const notes = [880, 1108.7, 1318.5]; // A5, C#6, E6 - um "tin-tin-tin" suave
-    const startTime = audioCtx.currentTime;
+    const startTime = ctx.currentTime;
 
     notes.forEach((freq, i) => {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
       osc.type = 'sine';
       osc.frequency.value = freq;
 
@@ -32,12 +42,46 @@ function playChime() {
       gain.gain.linearRampToValueAtTime(0.18, noteStart + 0.02);
       gain.gain.exponentialRampToValueAtTime(0.0001, noteStart + 0.6);
 
-      osc.connect(gain).connect(audioCtx.destination);
+      osc.connect(gain).connect(ctx.destination);
       osc.start(noteStart);
       osc.stop(noteStart + 0.65);
     });
   } catch {
     // som é só um extra; se o áudio falhar, a dica continua funcionando
+  }
+}
+
+function playBounceThud(speed) {
+  if (muted) return;
+  try {
+    const ctx = getAudioCtx();
+    const t0 = ctx.currentTime;
+    // "boing" curto: um tom grave que sobe rapidinho e um clique seco de impacto,
+    // com o volume proporcional à força da batida
+    const strength = Math.min(speed / 900, 1);
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(160, t0);
+    osc.frequency.exponentialRampToValueAtTime(70, t0 + 0.12);
+    gain.gain.setValueAtTime(0.001, t0);
+    gain.gain.linearRampToValueAtTime(0.08 + strength * 0.18, t0 + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.18);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + 0.2);
+
+    const click = ctx.createOscillator();
+    const clickGain = ctx.createGain();
+    click.type = 'square';
+    click.frequency.value = 900;
+    clickGain.gain.setValueAtTime(0.05 + strength * 0.06, t0);
+    clickGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.03);
+    click.connect(clickGain).connect(ctx.destination);
+    click.start(t0);
+    click.stop(t0 + 0.04);
+  } catch {
+    // som é só um extra
   }
 }
 
@@ -209,8 +253,22 @@ sunWrap.addEventListener('contextmenu', (event) => {
   window.solzinho.openContextMenu();
 });
 
+function playWallBounce({ axis, speed }) {
+  sunWrap.classList.remove('wall-bounce-x', 'wall-bounce-y');
+  void sunWrap.offsetWidth; // reinicia a animação em batidas seguidas
+  sunWrap.classList.add(axis === 'y' ? 'wall-bounce-y' : 'wall-bounce-x');
+  playBounceThud(speed);
+}
+
+sunWrap.addEventListener('animationend', (event) => {
+  if (event.animationName === 'wall-squash-x' || event.animationName === 'wall-squash-y') {
+    sunWrap.classList.remove('wall-bounce-x', 'wall-bounce-y');
+  }
+});
+
 window.solzinho.onInit((settings) => {
   applyLanguage(settings.language || 'pt');
+  applyMute(!!settings.muted);
   setState(settings.walking ? 'walk' : 'idle');
 });
 
@@ -220,3 +278,5 @@ window.solzinho.onBubble(showBubble);
 window.solzinho.onBreathingStart(startBreathing);
 window.solzinho.onBreathingEnd(endBreathing);
 window.solzinho.onLanguageChanged(applyLanguage);
+window.solzinho.onMuteChanged(applyMute);
+window.solzinho.onBounce(playWallBounce);

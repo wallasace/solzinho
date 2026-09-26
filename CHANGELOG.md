@@ -105,8 +105,22 @@ funcionalidade, não releases.
 - O sol vira lua no modo respiração: durante a contagem regressiva ele
   rodopia e encolhe enquanto uma lua 🌛 com brilho azulado surge; é a lua
   que respira; no fim ela volta a ser sol.
-- A transição virou um morph pra lua cheia 🌝: o sol dissolve dentro da
-  lua no mesmo lugar (com desfoque suave), em vez de rodopiar.
+- A transição virou um eclipse de verdade: a lua 🌚 dá a volta por trás do
+  sol (órbita), cruza por cima e desce na frente crescendo até cobrir o
+  sol exatamente, com a coroa solar (o brilho que já existia) visível ao
+  redor. A volta é a mesma órbita ao contrário.
+- Arremesso com física: soltar o sol em movimento continua o movimento
+  dele, indo mais devagar aos poucos e quicando nas bordas da tela, até
+  parar sozinho. Pegar ele de novo no meio do arremesso cancela.
+- Bounce ao clicar no sol (achata e volta ao normal).
+- Batida na parede durante o arremesso: o sol "amassa" na hora do impacto
+  (esguicha pro lado contrário e volta) e toca um "boing" curto cujo
+  volume acompanha a força da batida.
+- Opção "Mutar/Ativar sons" no menu, desliga o tin-tin-tin da dica e o
+  boing da batida.
+- Corrigido: o brilho ao redor do sol (raios + glow) ficava com uma
+  "máscara" cortando a borda no pico do pulso — o `<svg>` corta o próprio
+  desenho por padrão e o pulso passava um pouco do limite dele.
 
 ## Dois ritmos de dica
 

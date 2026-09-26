@@ -47,7 +47,7 @@ const BREATHING_CYCLES = 4;
 const BREATHING_COUNTDOWN_MS = 3000;
 
 const MENU_W = 260;
-const MENU_H = 430;
+const MENU_H = 460;
 const FREQ_PROMPT_W = 280;
 const FREQ_PROMPT_H = 150;
 // distância do topo da janela invisível do sol (WIN_H) até o topo visual do
@@ -133,7 +133,7 @@ function saveSettings() {
 }
 
 const settings = Object.assign(
-  { frequencyMinutes: 30, tipsPaused: false, walking: true, language: 'pt' },
+  { frequencyMinutes: 30, tipsPaused: false, walking: true, language: 'pt', muted: false },
   loadSettings()
 );
 
@@ -558,6 +558,7 @@ function openContextMenu() {
       isCustom: !FREQUENCY_OPTIONS.includes(settings.frequencyMinutes),
       frequencyOptions: FREQUENCY_OPTIONS,
       language: settings.language,
+      muted: settings.muted,
     });
   });
   m.on('blur', () => {
@@ -603,6 +604,11 @@ function handleMenuAction(action, value) {
       settings.language = value;
       saveSettings();
       if (win && !win.isDestroyed()) win.webContents.send('language-changed', value);
+      break;
+    case 'toggle-mute':
+      settings.muted = !settings.muted;
+      saveSettings();
+      if (win && !win.isDestroyed()) win.webContents.send('mute-changed', settings.muted);
       break;
     case 'quit':
       app.quit();
@@ -652,6 +658,12 @@ ipcMain.on('bubble-dismissed', () => {
 // O arraste lê o cursor aqui no processo principal (screen.getCursorScreenPoint),
 // não as coordenadas que o renderer manda: com monitores de escalas diferentes
 // (ex.: 100% e 150%) as coordenadas do renderer ficam erradas ao cruzar de tela.
+// Velocidade estimada durante o arraste (px/s), suavizada entre os ticks,
+// usada pra decidir o "impulso" do sol quando ele é solto em movimento.
+let dragLastPos = null;
+let dragLastTime = null;
+let dragVelocity = { x: 0, y: 0 };
+
 function dragTick() {
   if (!dragging || !win || win.isDestroyed()) return;
   const cursor = screen.getCursorScreenPoint();
@@ -660,6 +672,16 @@ function dragTick() {
   // vale o monitor onde o sol vai ficar — qualquer um dos monitores
   const area = screen.getDisplayNearestPoint(sunCenter({ x: wantX, y: wantY })).workArea;
   const { x, y } = clampSunWindowPosition(wantX, wantY, area);
+
+  const now = Date.now();
+  if (dragLastPos && dragLastTime) {
+    const dt = Math.max(now - dragLastTime, 1) / 1000;
+    dragVelocity.x = dragVelocity.x * 0.5 + ((x - dragLastPos.x) / dt) * 0.5;
+    dragVelocity.y = dragVelocity.y * 0.5 + ((y - dragLastPos.y) / dt) * 0.5;
+  }
+  dragLastPos = { x, y };
+  dragLastTime = now;
+
   setSunBounds(x, y);
   repositionFollowerWindows();
 }
@@ -668,19 +690,90 @@ function stopDrag() {
   dragging = false;
   dragStartMouse = null;
   dragStartBounds = null;
+  const throwVelocity = dragVelocity;
+  dragLastPos = null;
+  dragLastTime = null;
+  dragVelocity = { x: 0, y: 0 };
   if (dragTimer) clearInterval(dragTimer);
   dragTimer = null;
   if (displayChangePending && win && !win.isDestroyed()) refreshInputAfterDisplayChange();
+  startFlingIfFast(throwVelocity);
 }
 
 ipcMain.on('drag-start', () => {
   if (!win || win.isDestroyed()) return;
+  stopFling(); // se estava sacudindo o sol de novo enquanto ele quicava
   dragging = true;
   dragStartMouse = screen.getCursorScreenPoint();
   dragStartBounds = { ...getSunPos() };
+  dragLastPos = null;
+  dragLastTime = null;
+  dragVelocity = { x: 0, y: 0 };
   if (dragTimer) clearInterval(dragTimer);
   dragTimer = setInterval(dragTick, 16);
 });
+
+// ---- Física do arremesso ----
+// Soltar o sol em movimento continua o movimento dele: perde velocidade aos
+// poucos (atrito) e quica nas bordas da tela (perde parte da velocidade a
+// cada batida), como se tivesse física de verdade. Fica no mesmo monitor de
+// onde foi solto — assim como andar sozinho, arremessar não troca de tela.
+const FLING_MIN_SPEED = 60; // px/s abaixo disso nem começa (ex.: só um clique)
+const FLING_FRICTION = 0.985; // por tick de 16ms
+const FLING_BOUNCE = 0.55; // fração da velocidade que sobra depois de bater na borda
+const FLING_STOP_SPEED = 12; // px/s abaixo disso, considera que já parou
+let flingTimer = null;
+let flingVel = null;
+
+function startFlingIfFast(v) {
+  if (Math.hypot(v.x, v.y) < FLING_MIN_SPEED) return;
+  flingVel = { ...v };
+  pauseWalk('fling');
+  if (flingTimer) clearInterval(flingTimer);
+  flingTimer = setInterval(flingTick, 16);
+}
+
+function flingTick() {
+  if (!flingVel || !win || win.isDestroyed()) {
+    stopFling();
+    return;
+  }
+  const dt = 0.016;
+  const pos = getSunPos();
+  const rawX = pos.x + flingVel.x * dt;
+  const rawY = pos.y + flingVel.y * dt;
+  const area = screen.getDisplayNearestPoint(sunCenter({ x: rawX, y: rawY })).workArea;
+  const { x, y } = clampSunWindowPosition(rawX, rawY, area);
+
+  const hitX = x !== Math.round(rawX);
+  const hitY = y !== Math.round(rawY);
+  if (hitX) flingVel.x = -flingVel.x * FLING_BOUNCE;
+  if (hitY) flingVel.y = -flingVel.y * FLING_BOUNCE;
+  flingVel.x *= FLING_FRICTION;
+  flingVel.y *= FLING_FRICTION;
+
+  // só avisa a "batida" (som + amassado) quando bate com alguma força — perto
+  // do fim do arremesso ele quica de leve várias vezes e isso ficaria irritante
+  const impactSpeed = Math.max(hitX ? Math.abs(flingVel.x) : 0, hitY ? Math.abs(flingVel.y) : 0);
+  if (impactSpeed > 40) {
+    win.webContents.send('bounce', { axis: hitX ? 'x' : 'y', speed: impactSpeed });
+  }
+
+  setSunBounds(x, y);
+  if (Math.abs(flingVel.x) > 5) win.webContents.send('face-direction', flingVel.x < 0 ? -1 : 1);
+  repositionFollowerWindows();
+
+  if (Math.hypot(flingVel.x, flingVel.y) < FLING_STOP_SPEED) stopFling();
+}
+
+function stopFling() {
+  if (!flingTimer && !flingVel) return;
+  if (flingTimer) clearInterval(flingTimer);
+  flingTimer = null;
+  if (flingVel && Math.abs(flingVel.x) > 1) direction = flingVel.x > 0 ? 1 : -1;
+  flingVel = null;
+  resumeWalk('fling');
+}
 
 ipcMain.on('drag-end', stopDrag);
 
@@ -744,5 +837,6 @@ app.on('window-all-closed', () => {
   if (breathingTimeout) clearTimeout(breathingTimeout);
   if (dragTimer) clearInterval(dragTimer);
   if (hoverTimer) clearInterval(hoverTimer);
+  if (flingTimer) clearInterval(flingTimer);
   app.quit();
 });

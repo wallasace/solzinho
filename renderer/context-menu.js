@@ -48,6 +48,10 @@ function render(state) {
   breathing.addEventListener('click', () => window.menuApi.action('breathing-exercise'));
   menu.appendChild(breathing);
 
+  const toggleMute = el('div', 'item', state.muted ? T.unmuteSounds : T.muteSounds);
+  toggleMute.addEventListener('click', () => window.menuApi.action('toggle-mute'));
+  menu.appendChild(toggleMute);
+
   menu.appendChild(el('div', 'divider'));
   menu.appendChild(el('div', 'section-label', T.languageSection));
 

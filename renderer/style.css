@@ -37,9 +37,18 @@ html, body {
   pointer-events: none;
   transition: opacity 0.5s ease;
   z-index: 0;
+  /* o <svg> corta o próprio desenho na borda do viewBox por padrão; o
+     glow-circle passa um pouco dela no pico do pulso (glow-pulse) e ficava
+     com uma "máscara" cortando a borda do brilho */
+  overflow: visible;
 }
 
-#sun-wrap.shining #glow {
+/* durante o eclipse (moon-mode/breathing/moon-exit) o mesmo brilho vira a
+   "coroa solar" ao redor do disco escuro da lua */
+#sun-wrap.shining #glow,
+#sun-wrap.moon-mode #glow,
+#sun-wrap.breathing #glow,
+#sun-wrap.moon-exit #glow {
   opacity: 1;
 }
 
@@ -52,12 +61,21 @@ html, body {
   animation: ray-spin 6s linear infinite;
 }
 
+#sun-wrap.moon-mode #rays,
+#sun-wrap.breathing #rays,
+#sun-wrap.moon-exit #rays {
+  animation: ray-spin 14s linear infinite;
+}
+
 #glow-circle {
   transform-box: view-box;
   transform-origin: 100px 100px;
 }
 
-#sun-wrap.shining #glow-circle {
+#sun-wrap.shining #glow-circle,
+#sun-wrap.moon-mode #glow-circle,
+#sun-wrap.breathing #glow-circle,
+#sun-wrap.moon-exit #glow-circle {
   animation: glow-pulse 1.5s ease-in-out infinite;
 }
 
@@ -142,17 +160,18 @@ html, body {
   65% { transform: scale(-0.95, 1.06); }
 }
 
-/* Exercício de respiração: o sol vira lua cheia num "morph" — os dois
-   rostos redondos ficam no mesmo lugar e um dissolve dentro do outro, com um
-   desfoque leve e uma "respirada" de tamanho no meio da transição. É a lua
-   que infla/esvazia em sincronia com as fases inspire(4s)/segure(4s)/
-   solte(4s)/segure(4s) do renderer.js. No fim, o morph inverso. As regras
-   com .facing-left existem só pra ganhar da animação de caminhada virada
-   pra esquerda, que tem seletor mais forte. */
+/* Exercício de respiração: eclipse. A lua entra pequena e por trás (z-index
+   abaixo do sol), dá a volta por cima como uma órbita e desce na frente,
+   crescendo até cobrir o sol exatamente — a coroa (#glow, ligado acima) fica
+   visível ao redor. O sol fica visível durante toda a órbita e só é coberto
+   nos 100% finais, quando a lua já está na frente e do tamanho dele. Pra
+   sair do modo, é a mesma órbita de trás pra frente (`animation-direction:
+   reverse` na mesma @keyframes) — a lua se afasta pela frente e volta a
+   entrar por trás até sumir. */
 #moon-wrap {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -163,16 +182,15 @@ html, body {
 #moon {
   font-size: 64px;
   line-height: 1;
-  filter: drop-shadow(0 0 10px rgba(185, 210, 255, 0.95)) drop-shadow(0 4px 6px rgba(0, 0, 0, 0.25));
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35));
 }
 
-#sun-wrap.moon-mode #sun,
-#sun-wrap.moon-mode.facing-left #sun {
-  animation: morph-out 1.4s ease-in-out forwards;
+#sun-wrap.moon-mode #sun {
+  animation: eclipse-sun 1.8s ease-in-out forwards;
 }
 
 #sun-wrap.moon-mode #moon-wrap {
-  animation: morph-in 1.4s ease-in-out forwards;
+  animation: eclipse-orbit 1.8s ease-in-out forwards;
   pointer-events: auto;
   cursor: grab;
 }
@@ -181,31 +199,50 @@ html, body {
   animation: breath-cycle 16s ease-in-out infinite;
 }
 
+#sun-wrap.moon-exit #sun {
+  animation: eclipse-sun 1.8s ease-in-out reverse forwards;
+}
+
 #sun-wrap.moon-exit #moon-wrap {
-  animation: morph-out 1.4s ease-in-out forwards;
+  animation: eclipse-orbit 1.8s ease-in-out reverse forwards;
 }
 
-#sun-wrap.moon-exit #sun,
-#sun-wrap.moon-exit.facing-left #sun {
-  animation: morph-in-sun 1.4s ease-in-out forwards;
+/* posição/tamanho/z-index da lua ao longo da órbita: some pequena atrás à
+   direita, sobe e cruza por trás até a esquerda, desce na frente crescendo,
+   e fecha o eclipse no centro, do tamanho do sol */
+@keyframes eclipse-orbit {
+  0% {
+    opacity: 0;
+    transform: translate(60px, 22px) scale(0.22);
+    z-index: 0;
+  }
+  22% {
+    opacity: 0.9;
+    transform: translate(48px, -32px) scale(0.4);
+    z-index: 0;
+  }
+  48% {
+    opacity: 1;
+    transform: translate(-46px, -46px) scale(0.65);
+    z-index: 0;
+  }
+  72% {
+    opacity: 1;
+    transform: translate(-18px, -8px) scale(0.9);
+    z-index: 2;
+  }
+  100% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+    z-index: 2;
+  }
 }
 
-@keyframes morph-out {
-  0% { opacity: 1; transform: scale(1); filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.25)) blur(0px); }
-  50% { opacity: 0.5; transform: scale(0.9); filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.25)) blur(2px); }
-  100% { opacity: 0; transform: scale(1); filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.25)) blur(3px); }
-}
-
-@keyframes morph-in-sun {
-  0% { opacity: 0; transform: scale(1); filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.25)) blur(3px); }
-  50% { opacity: 0.5; transform: scale(0.9); filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.25)) blur(2px); }
-  100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.25)) blur(0px); }
-}
-
-@keyframes morph-in {
-  0% { opacity: 0; transform: scale(1); filter: blur(3px); }
-  50% { opacity: 0.5; transform: scale(0.9); filter: blur(2px); }
-  100% { opacity: 1; transform: scale(1); filter: blur(0px); }
+/* o sol some só perto do fim, quando a lua (mesmo tamanho) já está na
+   frente cobrindo ele por completo */
+@keyframes eclipse-sun {
+  0%, 68% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 @keyframes breath-cycle {
@@ -229,5 +266,32 @@ html, body {
   25% { transform: translateX(-50%) scale(1.12, 0.82); }
   55% { transform: translateX(-50%) translateY(-10px) scale(0.92, 1.1); }
   80% { transform: translateX(-50%) translateY(0) scale(1.04, 0.97); }
+  100% { transform: translateX(-50%) scale(1, 1); }
+}
+
+/* Batida na borda da tela durante o arremesso: achata na hora do impacto
+   e volta ao tamanho normal (squash-and-stretch). x = bateu numa lateral
+   (achata na horizontal), y = bateu em cima/embaixo (achata na vertical). */
+#sun-wrap.wall-bounce-x {
+  transform-origin: 50% 100%;
+  animation: wall-squash-x 0.32s cubic-bezier(0.36, 1.4, 0.64, 1);
+}
+
+#sun-wrap.wall-bounce-y {
+  transform-origin: 50% 100%;
+  animation: wall-squash-y 0.32s cubic-bezier(0.36, 1.4, 0.64, 1);
+}
+
+@keyframes wall-squash-x {
+  0% { transform: translateX(-50%) scale(1, 1); }
+  35% { transform: translateX(-50%) scale(0.72, 1.28); }
+  70% { transform: translateX(-50%) scale(1.08, 0.94); }
+  100% { transform: translateX(-50%) scale(1, 1); }
+}
+
+@keyframes wall-squash-y {
+  0% { transform: translateX(-50%) scale(1, 1); }
+  35% { transform: translateX(-50%) scale(1.28, 0.72); }
+  70% { transform: translateX(-50%) scale(0.94, 1.08); }
   100% { transform: translateX(-50%) scale(1, 1); }
 }

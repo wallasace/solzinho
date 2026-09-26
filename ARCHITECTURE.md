@@ -29,15 +29,26 @@ em volta do sol (`computeSpeechPlacement`): acima dele; abaixo, se não há
 espaço em cima; deslocado pro lado quando o sol está na borda, com a
 "pontinha" sempre apontando pro sol. O sol nunca se move pra abrir espaço.
 
-### Modo respiração: sol vira lua
+### Modo respiração: eclipse
 
-Classes no `#sun-wrap`: `moon-mode` (morph do sol pra lua cheia 🌝 durante
-a contagem regressiva), `breathing` (a lua infla/esvazia em ciclos de 16s)
-e `moon-exit` (morph de volta pro sol). Emoji não pode ser deformado, então
-o "morph" é uma dissolução no mesmo lugar: os dois rostos redondos se
-sobrepõem, um some enquanto o outro aparece, com desfoque e uma leve
-redução de tamanho no meio (`morph-out` / `morph-in` / `morph-in-sun`). Os cliques são ouvidos no
-`#sun-wrap`, não no `#sun`, pra funcionarem também sobre a lua.
+Classes no `#sun-wrap`: `moon-mode` (a lua 🌚 entra pequena e por trás do
+sol, dá a volta por cima como uma órbita e desce na frente crescendo até
+cobrir o sol exatamente — durante a contagem regressiva), `breathing` (a
+lua, já em eclipse, infla/esvazia em ciclos de 16s) e `moon-exit` (a mesma
+órbita de trás pra frente, usando `animation-direction: reverse` na mesma
+`@keyframes eclipse-orbit` — não há uma segunda animação escrita pra
+volta). O sol (`@keyframes eclipse-sun`) fica com opacidade cheia durante
+toda a órbita e só é encoberto nos ~30% finais, quando a lua já está na
+frente e do mesmo tamanho. O `#glow` (raios + brilho que já existia pra
+"dando uma dica") também liga durante o eclipse — vira a coroa solar ao
+redor do disco escuro da lua, girando mais devagar (14s) que no estado de
+fala (6s). Os cliques são ouvidos no `#sun-wrap`, não no `#sun`, pra
+funcionarem também sobre a lua.
+
+Bug corrigido: o `<svg>` do `#glow` corta o próprio desenho na borda do seu
+`viewBox` por padrão (comportamento do navegador); o pulso do círculo de
+brilho (`glow-pulse`) passa um pouco dela no pico da escala, cortando uma
+fatia do brilho — corrigido com `overflow: visible` no `#glow`.
 
 Todas usam `transparent: true`, `frame: false`, `alwaysOnTop: true` (nível
 `screen-saver`, o mais alto do Electron) e `skipTaskbar: true`. A janela do
@@ -152,6 +163,12 @@ com quantos monitores a pessoa tiver, em qualquer escala e arranjo.
   nunca troca de tela sozinha.
 - **Arraste**: é o único jeito de mudar de monitor; pode ir pra qualquer
   um, travado no monitor onde o sol vai ficar.
+- **Arremesso**: soltar o sol em movimento rápido continua o movimento
+  (`startFlingIfFast` / `flingTick`, em `main.js`) — atrito a cada tick,
+  quique nas bordas do monitor atual (perde parte da velocidade), até
+  parar sozinho e a caminhada normal retomar. A velocidade é estimada em
+  `dragTick()` comparando a posição a cada 16ms, suavizada entre ticks pra
+  não ficar nervosa. Arrastar de novo no meio do arremesso cancela ele.
 - **Monitor conectado/desconectado ou mudança de resolução/escala** com o
   app aberto: `keepSunOnScreen()` traz o sol de volta pro monitor mais
   próximo.
@@ -175,9 +192,12 @@ principal atualizar na hora — não precisa reiniciar o app.
 
 ## Som
 
-O "tin-tin-tin" que toca quando uma dica aparece é sintetizado na hora com
-a Web Audio API (osciladores simples), não é um arquivo de áudio — evita
-ter que embutir/licenciar um asset de som.
+O "tin-tin-tin" da dica e o "boing" do arremesso batendo na parede são
+sintetizados na hora com a Web Audio API (osciladores simples), não são
+arquivo de áudio — evita ter que embutir/licenciar um asset de som. O
+volume do boing escala com a força do impacto (`speed` mandado por
+`flingTick`). `settings.muted` (menu → 🔇/🔊) desliga os dois; a troca é
+avisada na hora por `mute-changed`, igual ao idioma.
 
 ## Scripts npm
 
