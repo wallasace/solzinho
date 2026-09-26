@@ -326,3 +326,24 @@ html, body {
   70% { transform: translateX(-50%) scale(0.94, 1.08); }
   100% { transform: translateX(-50%) scale(1, 1); }
 }
+
+/* enquanto ele voa pelo ar (arremesso): balança/gira em vez de ficar parado
+   ou só com a respiração calma do idle. Vem depois de walking/idle/talk no
+   arquivo de propósito, pra ganhar deles na empate de especificidade. */
+#sun-wrap.flinging #sun {
+  animation: fling-wobble 0.4s ease-in-out infinite;
+}
+
+#sun-wrap.flinging.facing-left #sun {
+  animation: fling-wobble-left 0.4s ease-in-out infinite;
+}
+
+@keyframes fling-wobble {
+  0%, 100% { transform: rotate(-12deg) scale(1, 1); }
+  50% { transform: rotate(12deg) scale(0.94, 1.06); }
+}
+
+@keyframes fling-wobble-left {
+  0%, 100% { transform: scale(-1, 1) rotate(-12deg); }
+  50% { transform: scale(-0.94, 1.06) rotate(12deg); }
+}

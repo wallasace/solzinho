@@ -117,6 +117,9 @@ funcionalidade, não releases.
 - Enquanto está sendo arremessado, o sol fica com uma cara de tonto (😵) e
   o brilho ao redor pulsa bem sutil (encolhe um pouco e volta) girando
   bem devagar. Ao parar sozinho, volta ao normal na hora, sem transição.
+- Corrigido: durante o arremesso o sol ficava sem nenhuma animação de
+  corpo (só a respiração parada do idle, quase imperceptível em
+  movimento). Agora ele balança/gira enquanto voa.
 - Som ao clicar na lua (ou no balão) pra encerrar a respiração — um "puf"
   de transformação de volta pra sol.
 - Pedir uma dica pelo menu durante o exercício de respiração não espera

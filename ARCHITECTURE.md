@@ -188,7 +188,9 @@ com quantos monitores a pessoa tiver, em qualquer escala e arranjo.
   não ficar nervosa. Arrastar de novo no meio do arremesso cancela ele.
   Enquanto dura, `#sun-wrap.flinging` troca a cara pra uma de tonto (😵,
   só troca o texto do `#sun` — não tem partes separadas de rosto pra
-  animar) e o `#glow` (mesmo brilho de outros estados) liga com um pulso
+  animar), balança/gira o corpo (`fling-wobble`, no lugar da respiração
+  parada do idle — sem isso ele "flutuava" pela tela sem animação nenhuma
+  de corpo) e o `#glow` (mesmo brilho de outros estados) liga com um pulso
   bem sutil (encolhe um pouco e volta) e os raios girando bem mais devagar
   que em qualquer outro estado (26s). Ao parar sozinho, volta pra cara
   normal na hora, sem transição — não precisa disso, só desliga.
