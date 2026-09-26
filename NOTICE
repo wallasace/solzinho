@@ -1,0 +1,41 @@
+Solzinho
+Copyright © 2026 Wallace Ferreira de Abreu
+https://github.com/wallasace/solzinho
+
+Licensed under the PolyForm Internal Use License 1.0.0. See LICENSE.
+
+This file lists third-party material used by Solzinho and the terms that
+apply to it. These terms belong to their respective authors and are not
+changed by Solzinho's own license.
+
+
+--------------------------------------------------------------------------------
+REDISTRIBUTED INSIDE THE WINDOWS BUILD
+--------------------------------------------------------------------------------
+
+Electron (bundles Chromium and Node.js)
+  Copyright (c) Electron contributors, Copyright (c) 2013-2020 GitHub Inc.
+  MIT License
+  https://github.com/electron/electron
+  Chromium and Node.js, bundled inside Electron, carry their own licenses
+  (BSD-style and MIT respectively); see Electron's own LICENSE and
+  the about:licenses page it ships for the full list.
+
+
+--------------------------------------------------------------------------------
+LOADED AT RUNTIME (no external network calls)
+--------------------------------------------------------------------------------
+
+None. Solzinho's UI uses only the OS's built-in emoji font and system UI
+font ("Segoe UI"); it does not fetch fonts, icons or scripts from the network.
+
+
+--------------------------------------------------------------------------------
+ORIGINAL MATERIAL
+--------------------------------------------------------------------------------
+
+The sun character is the "🌞" emoji rendered by the operating system's own
+emoji font, not a bundled image asset. All other visual and audio elements
+(the speech bubble, the glow, the breathing-exercise chime) are drawn or
+synthesized in code at runtime (CSS/SVG and the Web Audio API) and are
+covered by Solzinho's own license.

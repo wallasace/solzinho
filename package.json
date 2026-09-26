@@ -1,0 +1,43 @@
+{
+  "name": "solzinho",
+  "version": "1.0.0",
+  "description": "Amiguinho de desktop que anda pela tela e traz dicas de acalmar baseadas em psicologia",
+  "main": "main.js",
+  "private": true,
+  "author": "Wallace Ferreira de Abreu <https://github.com/wallasace>",
+  "license": "LicenseRef-PolyForm-Internal-Use-1.0.0",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "build": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^32.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.wallasace.solzinho",
+    "productName": "Solzinho",
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}

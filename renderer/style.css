@@ -1,0 +1,270 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+#sun-wrap {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 96px;
+  height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#glow {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  top: 50%;
+  left: 50%;
+  margin-left: -50px;
+  margin-top: -50px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+  z-index: 0;
+}
+
+#sun-wrap.shining #glow {
+  opacity: 1;
+}
+
+#rays {
+  transform-box: view-box;
+  transform-origin: 100px 100px;
+}
+
+#sun-wrap.shining #rays {
+  animation: ray-spin 6s linear infinite;
+}
+
+#glow-circle {
+  transform-box: view-box;
+  transform-origin: 100px 100px;
+}
+
+#sun-wrap.shining #glow-circle {
+  animation: glow-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes ray-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { transform: scale(0.92); opacity: 0.65; }
+  50% { transform: scale(1.12); opacity: 1; }
+}
+
+#sun {
+  position: relative;
+  z-index: 1;
+  font-size: 64px;
+  line-height: 1;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.25));
+  transition: transform 0.2s ease, filter 0.4s ease;
+  cursor: grab;
+}
+
+#sun-wrap.shining #sun {
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.25)) drop-shadow(0 0 18px rgba(255, 214, 102, 0.9));
+}
+
+#sun:active {
+  cursor: grabbing;
+}
+
+#sun.facing-left {
+  transform: scaleX(-1);
+}
+
+#sun-wrap.walking #sun {
+  animation: bob 0.5s ease-in-out infinite;
+}
+
+#sun-wrap.idle #sun {
+  animation: breathe 3s ease-in-out infinite;
+}
+
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+#sun-wrap.walking.facing-left #sun {
+  animation: bob-left 0.5s ease-in-out infinite;
+}
+
+@keyframes bob-left {
+  0%, 100% { transform: scaleX(-1) translateY(0); }
+  50% { transform: scaleX(-1) translateY(-6px); }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+/* enquanto a bolha de dica está aberta, o sol "fala" em vez de continuar
+   com a animação de caminhada/idle que estava tocando por baixo */
+#sun-wrap.shining #sun {
+  animation: talk 1.6s ease-in-out infinite;
+}
+
+#sun-wrap.shining.facing-left #sun {
+  animation: talk-left 1.6s ease-in-out infinite;
+}
+
+@keyframes talk {
+  0%, 100% { transform: scale(1, 1); }
+  30% { transform: scale(1.05, 0.9); }
+  65% { transform: scale(0.95, 1.06); }
+}
+
+@keyframes talk-left {
+  0%, 100% { transform: scale(-1, 1); }
+  30% { transform: scale(-1.05, 0.9); }
+  65% { transform: scale(-0.95, 1.06); }
+}
+
+/* exercício de respiração: o sol "infla" e "esvazia" em sincronia com as
+   fases inspire(4s)/segure(4s)/solte(4s)/segure(4s) do renderer.js */
+#sun-wrap.breathing #sun {
+  animation: breath-cycle 16s ease-in-out infinite;
+}
+
+#sun-wrap.breathing.facing-left #sun {
+  animation: breath-cycle-left 16s ease-in-out infinite;
+}
+
+@keyframes breath-cycle {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.3); }
+  50% { transform: scale(1.3); }
+  75% { transform: scale(1); }
+  100% { transform: scale(1); }
+}
+
+@keyframes breath-cycle-left {
+  0% { transform: scale(-1, 1); }
+  25% { transform: scale(-1.3, 1.3); }
+  50% { transform: scale(-1.3, 1.3); }
+  75% { transform: scale(-1, 1); }
+  100% { transform: scale(-1, 1); }
+}
+
+.speech-card {
+  position: absolute;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%) scale(0.85);
+  background: linear-gradient(160deg, #fffdf6, #fff2d2);
+  border: 1.5px solid rgba(240, 190, 90, 0.7);
+  border-radius: 20px;
+  color: #4a3818;
+  text-align: center;
+  box-shadow: 0 10px 26px rgba(120, 90, 20, 0.28);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.speech-card::after {
+  content: '';
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  width: 15px;
+  height: 15px;
+  background: #fff2d2;
+  border-right: 1.5px solid rgba(240, 190, 90, 0.7);
+  border-bottom: 1.5px solid rgba(240, 190, 90, 0.7);
+  border-radius: 0 0 4px 0;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.speech-card.visible {
+  opacity: 1;
+  pointer-events: auto;
+  animation: bubble-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.speech-card.hidden {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes bubble-pop {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px) scale(0.35);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+#bubble {
+  width: max-content;
+  max-width: 230px;
+  max-height: 190px;
+  overflow: hidden;
+  padding: 14px 18px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+#bubble-text {
+  display: inline-block;
+  opacity: 0;
+}
+
+#bubble-text.text-in {
+  animation: text-fade-in 0.4s ease 0.15s both;
+}
+
+@keyframes text-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+#breath-panel {
+  width: 180px;
+  padding: 18px 16px;
+  cursor: pointer;
+}
+
+#breath-phase {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+#breath-hint {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #9a7a3a;
+}

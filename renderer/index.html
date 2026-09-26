@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>solzinho</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="bubble" class="speech-card hidden">
+    <span id="bubble-text"></span>
+  </div>
+  <div id="breath-panel" class="speech-card hidden">
+    <div id="breath-phase"></div>
+    <div id="breath-hint">toque para parar</div>
+  </div>
+  <div id="sun-wrap">
+    <svg id="glow" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="glowGradient" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#fff6d5" stop-opacity="0.95" />
+          <stop offset="55%" stop-color="#ffd76a" stop-opacity="0.55" />
+          <stop offset="100%" stop-color="#ffd76a" stop-opacity="0" />
+        </radialGradient>
+      </defs>
+      <circle id="glow-circle" cx="100" cy="100" r="90" fill="url(#glowGradient)" />
+      <g id="rays" fill="#ffdf8f">
+        <rect x="94" y="4" width="12" height="36" rx="6" />
+        <rect x="94" y="4" width="12" height="36" rx="6" transform="rotate(45 100 100)" />
+        <rect x="94" y="4" width="12" height="36" rx="6" transform="rotate(90 100 100)" />
+        <rect x="94" y="4" width="12" height="36" rx="6" transform="rotate(135 100 100)" />
+        <rect x="94" y="4" width="12" height="36" rx="6" transform="rotate(180 100 100)" />
+        <rect x="94" y="4" width="12" height="36" rx="6" transform="rotate(225 100 100)" />
+        <rect x="94" y="4" width="12" height="36" rx="6" transform="rotate(270 100 100)" />
+        <rect x="94" y="4" width="12" height="36" rx="6" transform="rotate(315 100 100)" />
+      </g>
+    </svg>
+    <div id="sun">🌞</div>
+  </div>
+
+  <script src="i18n.js"></script>
+  <script src="messages.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>
