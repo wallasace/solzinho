@@ -88,6 +88,28 @@ function playBounceThud(speed) {
   }
 }
 
+function playMenuPop() {
+  if (muted) return;
+  try {
+    const ctx = getAudioCtx();
+    const t0 = ctx.currentTime;
+    // pop seco e curto: sobe rapidinho e morre na hora, sem "corpo" nenhum
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(500, t0);
+    osc.frequency.exponentialRampToValueAtTime(700, t0 + 0.02);
+    gain.gain.setValueAtTime(0.001, t0);
+    gain.gain.linearRampToValueAtTime(0.07, t0 + 0.006);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.05);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + 0.06);
+  } catch {
+    // som é só um extra
+  }
+}
+
 function playMoonToSunChime() {
   if (muted) return;
   try {
@@ -285,6 +307,7 @@ window.addEventListener('mouseup', endDrag);
 
 sunWrap.addEventListener('contextmenu', (event) => {
   event.preventDefault();
+  playMenuPop();
   window.solzinho.openContextMenu();
 });
 

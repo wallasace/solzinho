@@ -168,3 +168,4 @@ funcionalidade, não releases.
 - Botão "Relatar um bug" no menu: abre uma issue nova no GitHub já
   preenchida com versão, sistema e idioma (não manda nada sozinho — só
   prepara, a pessoa ainda revisa e envia).
+- Som ao abrir o menu (botão direito): um pop bem curto e seco.
