@@ -45,6 +45,7 @@ let breathingTimeout = null;
 const BREATHING_CYCLE_MS = 16000; // inspira 4s + segura 4s + solta 4s + segura 4s
 const BREATHING_CYCLES = 4;
 const BREATHING_COUNTDOWN_MS = 3000;
+const BREATHING_EXIT_ANIM_MS = 1800; // duração do eclipse-orbit reverso (renderer/style.css)
 
 const MENU_W = 260;
 const MENU_H = 460;
@@ -461,9 +462,24 @@ function endBreathingExercise() {
   breathingActive = false;
   if (breathingTimeout) clearTimeout(breathingTimeout);
   breathingTimeout = null;
-  resumeWalk('breathing');
   if (win && !win.isDestroyed()) win.webContents.send('end-breathing');
-  showPendingTipIfAny();
+  // segura o sol parado até a lua terminar de virar sol de novo (mesma
+  // animação de sempre), só então retoma a caminhada e mostra a dica
+  // pendente — se ela aparecesse na hora, cortaria a transição
+  setTimeout(() => {
+    resumeWalk('breathing');
+    showPendingTipIfAny();
+  }, BREATHING_EXIT_ANIM_MS);
+}
+
+// "me dá uma dica agora": se estiver no modo respiração, encerra ele (com a
+// mesma animação de virar sol de volta) e a dica aparece assim que o sol
+// estiver de volta ao normal, em vez de esperar o exercício terminar sozinho
+function requestTipNow() {
+  if (tipTimeout) clearTimeout(tipTimeout);
+  triggerBubble('calm');
+  if (breathingActive) endBreathingExercise();
+  scheduleNextTip();
 }
 
 function openCustomFrequencyPrompt() {
@@ -593,9 +609,7 @@ function handleMenuAction(action, value) {
       if (win) win.webContents.send('state', settings.walking ? 'walk' : 'idle');
       break;
     case 'request-tip':
-      if (tipTimeout) clearTimeout(tipTimeout);
-      triggerBubble();
-      scheduleNextTip();
+      requestTipNow();
       break;
     case 'breathing-exercise':
       startBreathingExercise();
@@ -646,9 +660,7 @@ function hoverTick() {
 }
 
 ipcMain.on('request-tip', () => {
-  if (tipTimeout) clearTimeout(tipTimeout);
-  triggerBubble();
-  scheduleNextTip();
+  requestTipNow();
 });
 
 ipcMain.on('bubble-dismissed', () => {

@@ -119,6 +119,9 @@ funcionalidade, não releases.
   bem devagar. Ao parar sozinho, volta ao normal na hora, sem transição.
 - Som ao clicar na lua (ou no balão) pra encerrar a respiração — um "puf"
   de transformação de volta pra sol.
+- Pedir uma dica pelo menu durante o exercício de respiração não espera
+  mais ele acabar sozinho: encerra na hora, com a mesma animação da lua
+  virando sol de volta, e a dica aparece assim que a transição termina.
 - Bounce ao clicar no sol (achata e volta ao normal).
 - Batida na parede durante o arremesso: o sol "amassa" na hora do impacto
   (esguicha pro lado contrário e volta) e toca um "boing" curto cujo

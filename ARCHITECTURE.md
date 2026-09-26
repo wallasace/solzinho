@@ -105,6 +105,15 @@ não aparece atrás do popup; ela fica guardada em `pendingTip` (guarda só
 terminar (`showPendingTipIfAny()`, chamado nos handlers de fechamento de
 cada popup e no fim do exercício de respiração).
 
+Pedir uma dica pelo menu ("Me dá uma dica agora") enquanto está no modo
+respiração não espera o exercício acabar sozinho: `requestTipNow()`
+encerra ele na hora (mesma animação de sempre, a lua virando sol) e a
+dica só aparece depois que a transição termina — `endBreathingExercise()`
+segura `showPendingTipIfAny()` atrás de um `setTimeout`
+(`BREATHING_EXIT_ANIM_MS`, igual à duração do `eclipse-orbit` reverso em
+`renderer/style.css`), pra não cortar a animação mostrando o balão em
+cima dela.
+
 ### Dois ciclos de dica independentes
 
 `scheduleNextTip()` (dicas de acalmar, frequência configurável pelo menu) e
