@@ -165,3 +165,6 @@ funcionalidade, não releases.
   "Depois" instala na próxima vez que o app fechar normalmente).
 - `npm run release` builda e publica o instalador direto como Release no
   GitHub — é o feed que a versão instalada consulta.
+- Botão "Relatar um bug" no menu: abre uma issue nova no GitHub já
+  preenchida com versão, sistema e idioma (não manda nada sozinho — só
+  prepara, a pessoa ainda revisa e envia).

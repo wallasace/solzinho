@@ -1,4 +1,4 @@
-const { app, BrowserWindow, screen, ipcMain } = require('electron');
+const { app, BrowserWindow, screen, ipcMain, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
@@ -51,7 +51,7 @@ const BREATHING_COUNTDOWN_MS = 3000;
 const BREATHING_EXIT_ANIM_MS = 1800; // duração do eclipse-orbit reverso (renderer/style.css)
 
 const MENU_W = 260;
-const MENU_H = 495;
+const MENU_H = 525;
 const FREQ_PROMPT_W = 280;
 const FREQ_PROMPT_H = 150;
 const UPDATE_PROMPT_W = 300;
@@ -628,6 +628,24 @@ function checkForUpdatesNow() {
   });
 }
 
+// Abre uma issue nova no GitHub já preenchida com a versão e o sistema —
+// só isso, não manda nada sozinho: a pessoa ainda revisa e clica em
+// "Submit" no navegador dela.
+function reportBug() {
+  const body = [
+    '<!-- descreva o que aconteceu, o que você esperava, e como reproduzir -->',
+    '',
+    '---',
+    `Versão do solzinho: ${app.getVersion()}`,
+    `Sistema: ${process.platform} ${require('os').release()}`,
+    `Idioma: ${settings.language}`,
+  ].join('\n');
+  const url =
+    'https://github.com/wallasace/solzinho/issues/new?' +
+    `title=${encodeURIComponent('[bug] ')}&body=${encodeURIComponent(body)}`;
+  shell.openExternal(url);
+}
+
 function openContextMenu() {
   // Fecha o menu anterior na hora (destroy, não close): o close() é
   // assíncrono, e o "closed" do menu antigo chegava depois de o novo já ter
@@ -724,6 +742,9 @@ function handleMenuAction(action, value) {
       break;
     case 'check-for-updates':
       checkForUpdatesNow();
+      break;
+    case 'report-bug':
+      reportBug();
       break;
     case 'quit':
       app.quit();

@@ -70,6 +70,10 @@ function render(state) {
   checkUpdates.addEventListener('click', () => window.menuApi.action('check-for-updates'));
   menu.appendChild(checkUpdates);
 
+  const reportBug = el('div', 'item', T.reportBug);
+  reportBug.addEventListener('click', () => window.menuApi.action('report-bug'));
+  menu.appendChild(reportBug);
+
   menu.appendChild(el('div', 'divider'));
 
   const quit = el('div', 'item danger', T.quit);

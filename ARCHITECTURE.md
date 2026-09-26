@@ -252,6 +252,14 @@ servidor próprio nem infraestrutura extra. Ver [README.md](README.md)
 pra como publicar uma versão nova (`npm run release`, precisa de
 `GH_TOKEN`).
 
+## Relatar um bug
+
+"🐛 Relatar um bug" no menu (`reportBug()` em `main.js`) não manda nada
+sozinho — monta o link de uma issue nova no GitHub já preenchida
+(versão do app via `app.getVersion()`, SO, idioma) e abre no navegador
+padrão com `shell.openExternal()`; quem relata ainda revisa e clica em
+"Submit" lá.
+
 ## Scripts npm
 
 - `npm start` — roda em modo desenvolvimento (`electron .`)
