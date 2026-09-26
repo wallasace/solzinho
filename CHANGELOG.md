@@ -173,3 +173,6 @@ funcionalidade, não releases.
   num canvas a partir dele mesmo, em vez do ícone padrão do Electron.
 - Opção no menu pra escolher se o solzinho inicia com o Windows ou não
   (antes era sempre ligado, sem jeito de desativar pelo próprio app).
+- Corrigido: o arremesso parava de repente com o sol ainda visivelmente
+  em movimento. Agora a reta final freia mais forte (~0,5s) até quase
+  zero, um final suave em vez de um corte seco.

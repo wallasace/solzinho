@@ -860,9 +860,14 @@ ipcMain.on('drag-start', () => {
 // cada batida), como se tivesse física de verdade. Fica no mesmo monitor de
 // onde foi solto — assim como andar sozinho, arremessar não troca de tela.
 const FLING_MIN_SPEED = 60; // px/s abaixo disso nem começa (ex.: só um clique)
-const FLING_FRICTION = 0.985; // por tick de 16ms
+const FLING_FRICTION = 0.985; // por tick de 16ms, no "cruzeiro" do arremesso
+// reta final: abaixo de FLING_EASE_SPEED, troca pra um freio bem mais forte
+// (~0.5s até quase zero) em vez de deixar o atrito normal correr até um corte
+// seco — sem isso, ele simplesmente "travava" de repente no fim
+const FLING_EASE_SPEED = 140;
+const FLING_EASE_FRICTION = 0.9;
 const FLING_BOUNCE = 0.55; // fração da velocidade que sobra depois de bater na borda
-const FLING_STOP_SPEED = 12; // px/s abaixo disso, considera que já parou
+const FLING_STOP_SPEED = 4; // px/s abaixo disso, considera que já parou de vez
 let flingTimer = null;
 let flingVel = null;
 
@@ -891,8 +896,10 @@ function flingTick() {
   const hitY = y !== Math.round(rawY);
   if (hitX) flingVel.x = -flingVel.x * FLING_BOUNCE;
   if (hitY) flingVel.y = -flingVel.y * FLING_BOUNCE;
-  flingVel.x *= FLING_FRICTION;
-  flingVel.y *= FLING_FRICTION;
+  const speed = Math.hypot(flingVel.x, flingVel.y);
+  const friction = speed < FLING_EASE_SPEED ? FLING_EASE_FRICTION : FLING_FRICTION;
+  flingVel.x *= friction;
+  flingVel.y *= friction;
 
   // só avisa a "batida" (som + amassado) quando bate com alguma força — perto
   // do fim do arremesso ele quica de leve várias vezes e isso ficaria irritante

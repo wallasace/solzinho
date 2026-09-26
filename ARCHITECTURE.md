@@ -186,6 +186,11 @@ com quantos monitores a pessoa tiver, em qualquer escala e arranjo.
   parar sozinho e a caminhada normal retomar. A velocidade é estimada em
   `dragTick()` comparando a posição a cada 16ms, suavizada entre ticks pra
   não ficar nervosa. Arrastar de novo no meio do arremesso cancela ele.
+  A reta final tem um freio mais forte (`FLING_EASE_SPEED` /
+  `FLING_EASE_FRICTION`) do que o atrito normal do "cruzeiro": sem isso,
+  o atrito fraco de sempre levava muito tempo pra chegar perto de zero, e
+  o corte em `FLING_STOP_SPEED` acontecia com o sol ainda visivelmente em
+  movimento — um "easy out" suave em ~0,5s em vez de um travão seco.
   Enquanto dura, `#sun-wrap.flinging` troca a cara pra uma de tonto (😵,
   só troca o texto do `#sun` — não tem partes separadas de rosto pra
   animar), balança/gira o corpo (`fling-wobble`, no lugar da respiração
