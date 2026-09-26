@@ -59,30 +59,41 @@ function playBounceThud(speed) {
   try {
     const ctx = getAudioCtx();
     const t0 = ctx.currentTime;
-    // "boing" curto: um tom grave que sobe rapidinho e um clique seco de impacto,
-    // com o volume proporcional à força da batida
+    // toque de "marimba" quentinho em vez do boing/clique seco de antes: uma
+    // nota agradável (sorteada entre umas poucas, tipo sino de vento) com um
+    // harmônico suave uma oitava acima pro corpo, e um filtro passa-baixa
+    // arredondando a onda triangular pra tirar qualquer aspereza
     const strength = Math.min(speed / 900, 1);
+    const notes = [392.0, 440.0, 493.88, 523.25]; // G4, A4, B4, C5
+    const freq = notes[Math.floor(Math.random() * notes.length)];
+    const duration = 0.28 + strength * 0.12;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 2200;
+    filter.connect(ctx.destination);
+
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(160, t0);
-    osc.frequency.exponentialRampToValueAtTime(70, t0 + 0.12);
-    gain.gain.setValueAtTime(0.001, t0);
-    gain.gain.linearRampToValueAtTime(0.08 + strength * 0.18, t0 + 0.015);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.18);
-    osc.connect(gain).connect(ctx.destination);
+    osc.type = 'triangle';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.linearRampToValueAtTime(0.1 + strength * 0.08, t0 + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+    osc.connect(gain).connect(filter);
     osc.start(t0);
-    osc.stop(t0 + 0.2);
+    osc.stop(t0 + duration + 0.02);
 
-    const click = ctx.createOscillator();
-    const clickGain = ctx.createGain();
-    click.type = 'square';
-    click.frequency.value = 900;
-    clickGain.gain.setValueAtTime(0.05 + strength * 0.06, t0);
-    clickGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.03);
-    click.connect(clickGain).connect(ctx.destination);
-    click.start(t0);
-    click.stop(t0 + 0.04);
+    const overtone = ctx.createOscillator();
+    const overtoneGain = ctx.createGain();
+    overtone.type = 'sine';
+    overtone.frequency.value = freq * 2;
+    overtoneGain.gain.setValueAtTime(0.0001, t0);
+    overtoneGain.gain.linearRampToValueAtTime(0.04 + strength * 0.03, t0 + 0.008);
+    overtoneGain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration * 0.7);
+    overtone.connect(overtoneGain).connect(filter);
+    overtone.start(t0);
+    overtone.stop(t0 + duration);
   } catch {
     // som é só um extra
   }

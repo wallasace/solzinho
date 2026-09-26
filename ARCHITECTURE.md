@@ -222,15 +222,18 @@ principal atualizar na hora — não precisa reiniciar o app.
 
 ## Som
 
-O "tin-tin-tin" da dica, o "boing" do arremesso batendo na parede, o
-"puf" de transformação (`playMoonToSunChime`, ao clicar na lua/no balão
-pra encerrar a respiração) e o pop seco do botão direito (`playMenuPop`,
-ao abrir o menu) são sintetizados na hora com a Web Audio API
-(osciladores simples), não são arquivo de áudio — evita ter que
-embutir/licenciar um asset de som. O volume do boing escala com a força
-do impacto (`speed` mandado por `flingTick`). `settings.muted` (menu →
-🔇/🔊) desliga os quatro; a troca é avisada na hora por `mute-changed`,
-igual ao idioma.
+O "tin-tin-tin" da dica, o toque de "marimba" do arremesso batendo na
+parede (`playBounceThud`), o "puf" de transformação (`playMoonToSunChime`,
+ao clicar na lua/no balão pra encerrar a respiração) e o pop seco do
+botão direito (`playMenuPop`, ao abrir o menu) são sintetizados na hora
+com a Web Audio API (osciladores simples), não são arquivo de áudio —
+evita ter que embutir/licenciar um asset de som. O som da batida sorteia
+uma nota entre um punhadinho de opções agradáveis (G4/A4/B4/C5), com um
+harmônico suave uma oitava acima e um filtro passa-baixa (`BiquadFilter`)
+arredondando a onda triangular — um toque quentinho em vez do boing/
+clique seco de antes; o volume (não o tom) escala com a força do impacto
+(`speed` mandado por `flingTick`). `settings.muted` (menu → 🔇/🔊) desliga
+os quatro; a troca é avisada na hora por `mute-changed`, igual ao idioma.
 
 ## Atualização automática (`electron-updater`)
 

@@ -176,3 +176,6 @@ funcionalidade, não releases.
 - Corrigido: o arremesso parava de repente com o sol ainda visivelmente
   em movimento. Agora a reta final freia mais forte (~0,5s) até quase
   zero, um final suave em vez de um corte seco.
+- Som da batida na parede trocado: em vez do boing/clique seco de antes,
+  um toque de marimba quentinho (nota sorteada + harmônico suave, sem
+  aspereza nenhuma).
