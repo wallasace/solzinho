@@ -67,6 +67,7 @@ funcionalidade, não releases.
 - Som sintetizado (Web Audio API, sem arquivo de áudio) tocando junto com
   a dica.
 - Animação de entrada do balão com efeito elástico (bounce).
+- Bounce ao clicar no sol (achata, estica pra cima e assenta).
 
 ## Menu customizado
 

@@ -155,8 +155,19 @@ let dragMoved = false;
 let dragStart = null;
 const DRAG_THRESHOLD = 4;
 
+function playClickBounce() {
+  sunWrap.classList.remove('clicked');
+  void sunWrap.offsetWidth; // reinicia a animação em cliques seguidos
+  sunWrap.classList.add('clicked');
+}
+
+sunWrap.addEventListener('animationend', (event) => {
+  if (event.animationName === 'click-bounce') sunWrap.classList.remove('clicked');
+});
+
 sunWrap.addEventListener('click', () => {
   if (dragMoved) return;
+  playClickBounce();
   if (breathingInProgress) {
     window.solzinho.stopBreathing();
     return;
