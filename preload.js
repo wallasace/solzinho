@@ -12,8 +12,7 @@ contextBridge.exposeInMainWorld('solzinho', {
   requestTip: () => ipcRenderer.send('request-tip'),
   bubbleDismissed: () => ipcRenderer.send('bubble-dismissed'),
   setMouseIgnore: (ignore) => ipcRenderer.send('set-mouse-ignore', ignore),
-  dragStart: (pos) => ipcRenderer.send('drag-start', pos),
-  dragMove: (pos) => ipcRenderer.send('drag-move', pos),
+  dragStart: () => ipcRenderer.send('drag-start'),
   dragEnd: () => ipcRenderer.send('drag-end'),
   openContextMenu: () => ipcRenderer.send('show-context-menu'),
 });

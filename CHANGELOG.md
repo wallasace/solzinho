@@ -27,6 +27,20 @@ funcionalidade, não releases.
   Agora o limite é aplicado ao sol visível, no monitor onde ele está, e o
   sol se afasta da borda só na hora de mostrar o balão.
 
+## Múltiplos monitores
+
+- Corrigido: ao arrastar pra um monitor com outra escala (ex.: 100% → 150%)
+  o sol ficava parado e não dava mais pra mover. Eram três causas: as
+  coordenadas do mouse vindas da janela ficam erradas entre escalas
+  diferentes (agora o cursor é lido direto do sistema), o "soltei o botão"
+  podia se perder (agora o arraste também termina se o botão não estiver
+  mais pressionado), e o arredondamento do Windows engolia o passo de
+  ~1px da caminhada (agora a posição é guardada pelo app).
+- A caminhada atravessa todos os monitores de quem estiver usando, subindo
+  ou descendo pro "chão" de cada tela.
+- Monitor desconectado ou mudança de resolução/escala com o app aberto:
+  o sol volta pro monitor mais próximo.
+
 ## Visual e feedback
 
 - Redesenho do balão de dica (estava sendo cortado pela janela) e do

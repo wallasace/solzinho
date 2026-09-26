@@ -72,17 +72,44 @@ jitter. Os dois passam pelo mesmo `triggerBubble(kind)` /
 O sol começou usando a região de drag nativa do Chromium, mas isso faz o
 Windows tratar aquela área como barra de título — clique normal e botão
 direito param de funcionar (o SO intercepta o mousedown antes do DOM).
-A solução final: `mousedown`/`mousemove`/`mouseup` no renderer enviam
-posição absoluta do mouse (`screenX`/`screenY`) por IPC; o main process
-calcula o delta e move a janela com `setBounds`.
+A solução final: o renderer só avisa início (`mousedown`) e fim
+(`mouseup`) do arraste; enquanto dura, o main process lê o cursor com
+`screen.getCursorScreenPoint()` a cada 16ms e move a janela.
+
+Por que o cursor é lido no main e não no renderer: com monitores de escalas
+diferentes (ex.: 100% e 150%), o `screenX`/`screenY` do renderer fica em
+outro sistema de coordenadas ao cruzar de tela, e o arraste travava.
+Pelo mesmo motivo, o renderer encerra o arraste se receber `mousemove` com
+nenhum botão pressionado — o `mouseup` pode se perder na troca de tela.
+
+## Posição do sol e múltiplos monitores
+
+A posição da janela do sol é guardada em `sunPos` (com casas decimais) e
+aplicada por `setSunBounds()`, em vez de relida com `getBounds()` a cada
+passo: num monitor com escala != 100% o Windows arredonda a posição e um
+passo de ~1px some — o sol "andava" sem sair do lugar. `setSunBounds()`
+também corrige o tamanho da janela, que o Windows pode alterar ao cruzar
+para um monitor de outra escala.
+
+Nada é fixo para um setup específico: todos os limites vêm de
+`screen.getAllDisplays()` / `getDisplayNearestPoint()`, então funciona
+com quantos monitores a pessoa tiver, em qualquer escala e arranjo.
+
+- **Caminhada**: atravessa todos os monitores (vai da borda esquerda do
+  monitor mais à esquerda até a direita do mais à direita). Ao entrar num
+  monitor mais alto ou mais baixo, o sol se ajusta pra ficar dentro dele;
+  se vinha no "chão" da tela anterior, continua no chão da nova.
+- **Arraste**: pode ir pra qualquer monitor, travado no monitor onde o sol
+  vai ficar.
+- **Monitor conectado/desconectado ou mudança de resolução/escala** com o
+  app aberto: `keepSunOnScreen()` traz o sol de volta pro monitor mais
+  próximo.
 
 O limite de tela (`clampSunWindowPosition`) é aplicado ao **sol visível**,
 não à janela: a janela tem ~80px invisíveis de cada lado e ~210px em cima
 (espaço do balão), então travar a janela deixava um vão até a borda real.
-A parte invisível pode sair da tela; o sol nunca sai. A área usada é a do
-monitor onde o cursor/sol está (`getDisplayNearestPoint` /
-`getDisplayMatching`), já descontando a barra de tarefas — funciona com
-vários monitores.
+A parte invisível pode sair da tela; o sol nunca sai. A barra de tarefas
+é sempre respeitada (usa-se `workArea`, não `bounds`).
 
 Consequência: com o sol encostado numa borda, a área do balão fica fora da
 tela. Por isso `ensureBubbleRoom()` traz a janela inteira pra dentro da tela

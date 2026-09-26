@@ -182,23 +182,30 @@ sunEl.addEventListener('mousedown', (event) => {
   isDragging = true;
   dragMoved = false;
   dragStart = { screenX: event.screenX, screenY: event.screenY };
-  window.solzinho.dragStart(dragStart);
+  window.solzinho.dragStart();
 });
 
-window.addEventListener('mousemove', (event) => {
-  if (!isDragging) return;
-  const dx = event.screenX - dragStart.screenX;
-  const dy = event.screenY - dragStart.screenY;
-  if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) dragMoved = true;
-  window.solzinho.dragMove({ screenX: event.screenX, screenY: event.screenY });
-});
-
-window.addEventListener('mouseup', () => {
+function endDrag() {
   if (!isDragging) return;
   isDragging = false;
   window.solzinho.dragEnd();
   if (!sunEl.matches(':hover')) window.solzinho.setMouseIgnore(true);
+}
+
+window.addEventListener('mousemove', (event) => {
+  if (!isDragging) return;
+  // o "soltei o botão" pode se perder (ex.: ao cruzar pra um monitor com
+  // outra escala); se o botão já não está pressionado, encerra o arraste
+  if (event.buttons === 0) {
+    endDrag();
+    return;
+  }
+  const dx = event.screenX - dragStart.screenX;
+  const dy = event.screenY - dragStart.screenY;
+  if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) dragMoved = true;
 });
+
+window.addEventListener('mouseup', endDrag);
 
 sunEl.addEventListener('contextmenu', (event) => {
   event.preventDefault();

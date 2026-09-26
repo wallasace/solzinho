@@ -28,6 +28,7 @@ function isWalkPaused() {
 let dragging = false; // true while the user is dragging the sun
 let dragStartMouse = null;
 let dragStartBounds = null;
+let dragTimer = null;
 let tickTimer = null;
 let idleTimeout = null;
 let idleResumeTimeout = null;
@@ -134,19 +135,36 @@ const settings = Object.assign(
   loadSettings()
 );
 
-// Área útil do monitor onde o sol está de fato (não sempre o monitor
-// primário) — importante em setups com mais de uma tela, senão o sol fica
-// preso só na tela primária mesmo tendo sido levado pra outra.
-function currentWorkArea(bounds) {
-  if (bounds) return screen.getDisplayMatching(bounds).workArea;
-  if (win && !win.isDestroyed()) return screen.getDisplayMatching(win.getBounds()).workArea;
+// Centro do sol visível na tela, a partir da posição da janela.
+function sunCenter(pos) {
+  return {
+    x: Math.round(pos.x + WIN_W / 2),
+    y: Math.round(pos.y + WIN_H - SUN_BOTTOM_MARGIN - SUN_SIZE / 2),
+  };
+}
+
+// Área útil do monitor onde o sol visível está. Usa o centro do sol, não a
+// janela: a janela é bem maior e pode estar mais em cima de outro monitor.
+function currentWorkArea() {
+  if (win && !win.isDestroyed()) return screen.getDisplayNearestPoint(sunCenter(getSunPos())).workArea;
   return screen.getPrimaryDisplay().workArea;
+}
+
+// Extensão horizontal somando todos os monitores, pra caminhada atravessar
+// de uma tela pra outra.
+function allDisplaysHorizontalRange() {
+  const areas = screen.getAllDisplays().map((d) => d.workArea);
+  return {
+    left: Math.min(...areas.map((a) => a.x)),
+    right: Math.max(...areas.map((a) => a.x + a.width)),
+  };
 }
 
 function createWindow() {
   const area = currentWorkArea();
   const x = area.x + Math.floor((area.width - WIN_W) / 2);
-  const y = area.y + area.height - WIN_H;
+  const y = area.y + area.height - WIN_H + SUN_BOTTOM_MARGIN;
+  sunPos = { x, y };
 
   win = new BrowserWindow({
     width: WIN_W,
@@ -181,16 +199,37 @@ function createWindow() {
   scheduleNextPhysicalTip();
 }
 
+// Posição da janela do sol guardada aqui (com casas decimais) em vez de relida
+// com getBounds() a cada passo: em monitor com escala != 100% o Windows
+// arredonda a posição e um passo de ~1px some, deixando o sol parado.
+let sunPos = null;
+
+function getSunPos() {
+  if (!sunPos) {
+    const b = win.getBounds();
+    sunPos = { x: b.x, y: b.y };
+  }
+  return sunPos;
+}
+
+function setSunBounds(x, y) {
+  sunPos = { x, y };
+  win.setBounds({ x: Math.round(x), y: Math.round(y), width: WIN_W, height: WIN_H });
+  // ao cruzar para um monitor com outra escala o Windows pode redimensionar a janela
+  const [w, h] = win.getSize();
+  if (w !== WIN_W || h !== WIN_H) win.setSize(WIN_W, WIN_H);
+}
+
 function startWalking() {
   if (tickTimer) clearInterval(tickTimer);
   tickTimer = setInterval(() => {
     if (!settings.walking || isWalkPaused() || dragging || !win || win.isDestroyed()) return;
-    const area = currentWorkArea();
-    const bounds = win.getBounds();
-    let nextX = bounds.x + direction * BASE_SPEED;
+    const pos = getSunPos();
+    const range = allDisplaysHorizontalRange();
+    let nextX = pos.x + direction * BASE_SPEED;
 
-    const minX = area.x - SUN_SIDE_OFFSET + EDGE_MARGIN;
-    const maxX = area.x + area.width - WIN_W + SUN_SIDE_OFFSET - EDGE_MARGIN;
+    const minX = range.left - SUN_SIDE_OFFSET + EDGE_MARGIN;
+    const maxX = range.right - WIN_W + SUN_SIDE_OFFSET - EDGE_MARGIN;
 
     if (nextX <= minX) {
       nextX = minX;
@@ -200,7 +239,22 @@ function startWalking() {
       direction = -1;
     }
 
-    win.setBounds({ x: Math.round(nextX), y: bounds.y, width: WIN_W, height: WIN_H });
+    // Ao passar pra outro monitor (que pode estar mais alto ou mais baixo),
+    // mantém o sol dentro dele; se vinha andando no "chão" da tela anterior,
+    // continua no chão da nova.
+    const fromArea = currentWorkArea();
+    const toArea = screen.getDisplayNearestPoint(sunCenter({ x: nextX, y: pos.y })).workArea;
+    const floorY = (a) => a.y + a.height - WIN_H + SUN_BOTTOM_MARGIN;
+    const topY = (a) => a.y - (WIN_H - SUN_VISUAL_TOP_MARGIN);
+    let nextY = pos.y;
+    const changedDisplay = fromArea.x !== toArea.x || fromArea.y !== toArea.y;
+    if (changedDisplay && Math.abs(pos.y - floorY(fromArea)) < 2) {
+      nextY = floorY(toArea);
+    } else {
+      nextY = Math.min(Math.max(pos.y, topY(toArea)), floorY(toArea));
+    }
+
+    setSunBounds(nextX, nextY);
     win.webContents.send('face-direction', direction);
   }, TICK_MS);
 }
@@ -267,13 +321,11 @@ function triggerBubble(kind = 'calm') {
 // sol estiver encostado numa borda, essa parte está fora da tela — então
 // traz a janela inteira pra dentro antes de falar.
 function ensureBubbleRoom() {
-  const bounds = win.getBounds();
+  const pos = getSunPos();
   const area = currentWorkArea();
-  const x = Math.min(Math.max(bounds.x, area.x), area.x + area.width - WIN_W);
-  const y = Math.max(bounds.y, area.y);
-  if (x !== bounds.x || y !== bounds.y) {
-    win.setBounds({ x, y, width: WIN_W, height: WIN_H });
-  }
+  const x = Math.min(Math.max(pos.x, area.x), area.x + area.width - WIN_W);
+  const y = Math.max(pos.y, area.y);
+  if (x !== pos.x || y !== pos.y) setSunBounds(x, y);
 }
 
 function showPendingTipIfAny() {
@@ -459,30 +511,39 @@ ipcMain.on('bubble-dismissed', () => {
   resumeWalk('bubble');
 });
 
-ipcMain.on('drag-start', (_event, pos) => {
-  if (!win || win.isDestroyed()) return;
-  dragging = true;
-  dragStartMouse = pos;
-  dragStartBounds = win.getBounds();
-});
-
-ipcMain.on('drag-move', (_event, pos) => {
-  if (!dragging || !dragStartMouse || !dragStartBounds || !win || win.isDestroyed()) return;
-  // usa o monitor do cursor (não o do sol antes do movimento), pra travar
-  // certinho assim que ele cruza pra outra tela, sem atraso de um frame
-  const area = screen.getDisplayNearestPoint({ x: pos.screenX, y: pos.screenY }).workArea;
-  const dx = pos.screenX - dragStartMouse.screenX;
-  const dy = pos.screenY - dragStartMouse.screenY;
-  const { x, y } = clampSunWindowPosition(dragStartBounds.x + dx, dragStartBounds.y + dy, area);
-  win.setBounds({ x, y, width: WIN_W, height: WIN_H });
+// O arraste lê o cursor aqui no processo principal (screen.getCursorScreenPoint),
+// não as coordenadas que o renderer manda: com monitores de escalas diferentes
+// (ex.: 100% e 150%) as coordenadas do renderer ficam erradas ao cruzar de tela.
+function dragTick() {
+  if (!dragging || !win || win.isDestroyed()) return;
+  const cursor = screen.getCursorScreenPoint();
+  const wantX = dragStartBounds.x + (cursor.x - dragStartMouse.x);
+  const wantY = dragStartBounds.y + (cursor.y - dragStartMouse.y);
+  // vale o monitor onde o sol vai ficar — qualquer um dos monitores
+  const area = screen.getDisplayNearestPoint(sunCenter({ x: wantX, y: wantY })).workArea;
+  const { x, y } = clampSunWindowPosition(wantX, wantY, area);
+  setSunBounds(x, y);
   repositionFollowerWindows();
-});
+}
 
-ipcMain.on('drag-end', () => {
+function stopDrag() {
   dragging = false;
   dragStartMouse = null;
   dragStartBounds = null;
+  if (dragTimer) clearInterval(dragTimer);
+  dragTimer = null;
+}
+
+ipcMain.on('drag-start', () => {
+  if (!win || win.isDestroyed()) return;
+  dragging = true;
+  dragStartMouse = screen.getCursorScreenPoint();
+  dragStartBounds = { ...getSunPos() };
+  if (dragTimer) clearInterval(dragTimer);
+  dragTimer = setInterval(dragTick, 16);
 });
+
+ipcMain.on('drag-end', stopDrag);
 
 ipcMain.on('show-context-menu', () => {
   openContextMenu();
@@ -515,9 +576,24 @@ function registerAutoLaunch() {
   app.setLoginItemSettings({ openAtLogin: true, path: process.execPath });
 }
 
+// Se um monitor for desconectado, mudar de resolução ou de escala com o app
+// aberto, o sol pode ficar numa posição que não existe mais — traz ele de
+// volta pro monitor mais próximo.
+function keepSunOnScreen() {
+  if (!win || win.isDestroyed()) return;
+  const pos = getSunPos();
+  const area = screen.getDisplayNearestPoint(sunCenter(pos)).workArea;
+  const { x, y } = clampSunWindowPosition(pos.x, pos.y, area);
+  setSunBounds(x, y);
+  repositionFollowerWindows();
+}
+
 app.whenReady().then(() => {
   registerAutoLaunch();
   createWindow();
+  screen.on('display-removed', keepSunOnScreen);
+  screen.on('display-added', keepSunOnScreen);
+  screen.on('display-metrics-changed', keepSunOnScreen);
 });
 
 app.on('window-all-closed', () => {
@@ -527,5 +603,6 @@ app.on('window-all-closed', () => {
   if (tipTimeout) clearTimeout(tipTimeout);
   if (physicalTipTimeout) clearTimeout(physicalTipTimeout);
   if (breathingTimeout) clearTimeout(breathingTimeout);
+  if (dragTimer) clearInterval(dragTimer);
   app.quit();
 });
