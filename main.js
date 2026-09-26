@@ -117,7 +117,12 @@ const settings = Object.assign(
   loadSettings()
 );
 
-function currentWorkArea() {
+// Área útil do monitor onde o sol está de fato (não sempre o monitor
+// primário) — importante em setups com mais de uma tela, senão o sol fica
+// preso só na tela primária mesmo tendo sido levado pra outra.
+function currentWorkArea(bounds) {
+  if (bounds) return screen.getDisplayMatching(bounds).workArea;
+  if (win && !win.isDestroyed()) return screen.getDisplayMatching(win.getBounds()).workArea;
   return screen.getPrimaryDisplay().workArea;
 }
 
@@ -431,7 +436,9 @@ ipcMain.on('drag-start', (_event, pos) => {
 
 ipcMain.on('drag-move', (_event, pos) => {
   if (!dragging || !dragStartMouse || !dragStartBounds || !win || win.isDestroyed()) return;
-  const area = currentWorkArea();
+  // usa o monitor do cursor (não o do sol antes do movimento), pra travar
+  // certinho assim que ele cruza pra outra tela, sem atraso de um frame
+  const area = screen.getDisplayNearestPoint({ x: pos.screenX, y: pos.screenY }).workArea;
   const dx = pos.screenX - dragStartMouse.screenX;
   const dy = pos.screenY - dragStartMouse.screenY;
   const minX = area.x;
