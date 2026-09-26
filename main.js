@@ -150,16 +150,6 @@ function currentWorkArea() {
   return screen.getPrimaryDisplay().workArea;
 }
 
-// Extensão horizontal somando todos os monitores, pra caminhada atravessar
-// de uma tela pra outra.
-function allDisplaysHorizontalRange() {
-  const areas = screen.getAllDisplays().map((d) => d.workArea);
-  return {
-    left: Math.min(...areas.map((a) => a.x)),
-    right: Math.max(...areas.map((a) => a.x + a.width)),
-  };
-}
-
 function createWindow() {
   const area = currentWorkArea();
   const x = area.x + Math.floor((area.width - WIN_W) / 2);
@@ -225,12 +215,13 @@ function startWalking() {
   if (tickTimer) clearInterval(tickTimer);
   tickTimer = setInterval(() => {
     if (!settings.walking || isWalkPaused() || dragging || !win || win.isDestroyed()) return;
+    // Andando sozinho ele fica no monitor onde está; só troca de tela arrastado.
     const pos = getSunPos();
-    const range = allDisplaysHorizontalRange();
+    const area = currentWorkArea();
     let nextX = pos.x + direction * BASE_SPEED;
 
-    const minX = range.left - SUN_SIDE_OFFSET + EDGE_MARGIN;
-    const maxX = range.right - WIN_W + SUN_SIDE_OFFSET - EDGE_MARGIN;
+    const minX = area.x - SUN_SIDE_OFFSET + EDGE_MARGIN;
+    const maxX = area.x + area.width - WIN_W + SUN_SIDE_OFFSET - EDGE_MARGIN;
 
     if (nextX <= minX) {
       nextX = minX;
@@ -240,22 +231,7 @@ function startWalking() {
       direction = -1;
     }
 
-    // Ao passar pra outro monitor (que pode estar mais alto ou mais baixo),
-    // mantém o sol dentro dele; se vinha andando no "chão" da tela anterior,
-    // continua no chão da nova.
-    const fromArea = currentWorkArea();
-    const toArea = screen.getDisplayNearestPoint(sunCenter({ x: nextX, y: pos.y })).workArea;
-    const floorY = (a) => a.y + a.height - WIN_H + SUN_BOTTOM_MARGIN;
-    const topY = (a) => a.y - (WIN_H - SUN_VISUAL_TOP_MARGIN);
-    let nextY = pos.y;
-    const changedDisplay = fromArea.x !== toArea.x || fromArea.y !== toArea.y;
-    if (changedDisplay && Math.abs(pos.y - floorY(fromArea)) < 2) {
-      nextY = floorY(toArea);
-    } else {
-      nextY = Math.min(Math.max(pos.y, topY(toArea)), floorY(toArea));
-    }
-
-    setSunBounds(nextX, nextY);
+    setSunBounds(nextX, pos.y);
     win.webContents.send('face-direction', direction);
   }, TICK_MS);
 }

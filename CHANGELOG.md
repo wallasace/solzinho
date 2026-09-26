@@ -40,8 +40,9 @@ funcionalidade, não releases.
   andava mas não dava mais pra clicar nem arrastar. A detecção de "mouse em
   cima do sol" dependia do repasse de mouse do Windows, que informa a
   posição errada nesses monitores; agora o app mesmo confere o cursor.
-- A caminhada atravessa todos os monitores de quem estiver usando, subindo
-  ou descendo pro "chão" de cada tela.
+- Funciona com todos os monitores de quem estiver usando: dá pra arrastar
+  o sol pra qualquer um. Andando sozinho ele fica no monitor onde está —
+  só troca de tela quando arrastado.
 - Monitor desconectado ou mudança de resolução/escala com o app aberto:
   o sol volta pro monitor mais próximo.
 

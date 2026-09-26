@@ -108,12 +108,10 @@ Nada é fixo para um setup específico: todos os limites vêm de
 `screen.getAllDisplays()` / `getDisplayNearestPoint()`, então funciona
 com quantos monitores a pessoa tiver, em qualquer escala e arranjo.
 
-- **Caminhada**: atravessa todos os monitores (vai da borda esquerda do
-  monitor mais à esquerda até a direita do mais à direita). Ao entrar num
-  monitor mais alto ou mais baixo, o sol se ajusta pra ficar dentro dele;
-  se vinha no "chão" da tela anterior, continua no chão da nova.
-- **Arraste**: pode ir pra qualquer monitor, travado no monitor onde o sol
-  vai ficar.
+- **Caminhada**: fica no monitor onde o sol está (de borda a borda dele);
+  nunca troca de tela sozinha.
+- **Arraste**: é o único jeito de mudar de monitor; pode ir pra qualquer
+  um, travado no monitor onde o sol vai ficar.
 - **Monitor conectado/desconectado ou mudança de resolução/escala** com o
   app aberto: `keepSunOnScreen()` traz o sol de volta pro monitor mais
   próximo.
