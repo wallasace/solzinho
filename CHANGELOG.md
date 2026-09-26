@@ -105,6 +105,8 @@ funcionalidade, não releases.
 - O sol vira lua no modo respiração: durante a contagem regressiva ele
   rodopia e encolhe enquanto uma lua 🌛 com brilho azulado surge; é a lua
   que respira; no fim ela volta a ser sol.
+- A transição virou um morph pra lua cheia 🌝: o sol dissolve dentro da
+  lua no mesmo lugar (com desfoque suave), em vez de rodopiar.
 
 ## Dois ritmos de dica
 

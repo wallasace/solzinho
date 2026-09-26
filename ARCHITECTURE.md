@@ -31,9 +31,12 @@ espaço em cima; deslocado pro lado quando o sol está na borda, com a
 
 ### Modo respiração: sol vira lua
 
-Classes no `#sun-wrap`: `moon-mode` (sol rodopia e some, lua 🌛 surge —
-durante a contagem regressiva), `breathing` (a lua infla/esvazia em ciclos
-de 16s) e `moon-exit` (volta pro sol). Os cliques são ouvidos no
+Classes no `#sun-wrap`: `moon-mode` (morph do sol pra lua cheia 🌝 durante
+a contagem regressiva), `breathing` (a lua infla/esvazia em ciclos de 16s)
+e `moon-exit` (morph de volta pro sol). Emoji não pode ser deformado, então
+o "morph" é uma dissolução no mesmo lugar: os dois rostos redondos se
+sobrepõem, um some enquanto o outro aparece, com desfoque e uma leve
+redução de tamanho no meio (`morph-out` / `morph-in` / `morph-in-sun`). Os cliques são ouvidos no
 `#sun-wrap`, não no `#sun`, pra funcionarem também sobre a lua.
 
 Todas usam `transparent: true`, `frame: false`, `alwaysOnTop: true` (nível
