@@ -105,10 +105,12 @@ funcionalidade, não releases.
 - O sol vira lua no modo respiração: durante a contagem regressiva ele
   rodopia e encolhe enquanto uma lua 🌛 com brilho azulado surge; é a lua
   que respira; no fim ela volta a ser sol.
-- A transição virou um eclipse de verdade: a lua 🌚 dá a volta por trás do
-  sol (órbita), cruza por cima e desce na frente crescendo até cobrir o
-  sol exatamente, com a coroa solar (o brilho que já existia) visível ao
-  redor. A volta é a mesma órbita ao contrário.
+- A transição virou um eclipse de verdade: a lua 🌚 emerge de trás do sol,
+  dá uma volta completa de 360° orbitando na frente dele (sol sempre
+  visível) e fecha a volta cobrindo o sol exatamente — eclipse total, com
+  a lua escurecendo um pouco e a coroa solar (só o anel, sem os raios
+  girando, bem mais colada na lua) visível ao redor. A volta pra sol é a
+  mesma órbita ao contrário.
 - Arremesso com física: soltar o sol em movimento continua o movimento
   dele, indo mais devagar aos poucos e quicando nas bordas da tela, até
   parar sozinho. Pegar ele de novo no meio do arremesso cancela.

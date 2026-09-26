@@ -31,19 +31,27 @@ espaço em cima; deslocado pro lado quando o sol está na borda, com a
 
 ### Modo respiração: eclipse
 
-Classes no `#sun-wrap`: `moon-mode` (a lua 🌚 entra pequena e por trás do
-sol, dá a volta por cima como uma órbita e desce na frente crescendo até
-cobrir o sol exatamente — durante a contagem regressiva), `breathing` (a
-lua, já em eclipse, infla/esvazia em ciclos de 16s) e `moon-exit` (a mesma
-órbita de trás pra frente, usando `animation-direction: reverse` na mesma
-`@keyframes eclipse-orbit` — não há uma segunda animação escrita pra
-volta). O sol (`@keyframes eclipse-sun`) fica com opacidade cheia durante
-toda a órbita e só é encoberto nos ~30% finais, quando a lua já está na
-frente e do mesmo tamanho. O `#glow` (raios + brilho que já existia pra
-"dando uma dica") também liga durante o eclipse — vira a coroa solar ao
-redor do disco escuro da lua, girando mais devagar (14s) que no estado de
-fala (6s). Os cliques são ouvidos no `#sun-wrap`, não no `#sun`, pra
-funcionarem também sobre a lua.
+Classes no `#sun-wrap`: `moon-mode` (0%-18%: a lua 🌚 emerge de trás do sol,
+mesmo centro dele, deslizando até a borda direita — `z-index:0`, só a
+lasca que não fica atrás do disco do sol aparece; 18%-85%: passa pra
+`z-index:2` e dá uma volta completa de 360° orbitando o sol num raio fixo,
+sem cobri-lo — é a lua "passeando na frente"; 85%-100%: fecha a volta
+encolhendo o raio de volta ao centro = eclipse total), `breathing` (a lua,
+já em eclipse total, infla/esvazia em ciclos de 16s) e `moon-exit` (a
+mesma órbita de trás pra frente, usando `animation-direction: reverse` na
+mesma `@keyframes eclipse-orbit` — não há uma segunda animação escrita pra
+volta). O sol (`@keyframes eclipse-sun`) fica com opacidade cheia o tempo
+todo — a "lasca" e a volta orbitando já não o cobrem, é só na sobreposição
+final (~97%-100%) que ele é escondido — e nesse instante a lua escurece
+um pouco (`filter: brightness(0.8)` em `#sun-wrap.breathing #moon`),
+simulando a sombra do eclipse total.
+
+O `#glow` (mesmo brilho de "dando uma dica") também liga durante o
+eclipse, mas vira uma coroa bem mais colada na silhueta da lua: menor
+(76px em vez de 100px) e **sem os raios girando** (`#rays { opacity: 0 }`
+nesses estados) — só o anel de brilho (`#glow-circle`) pulsando. Os
+cliques são ouvidos no `#sun-wrap`, não no `#sun`, pra funcionarem também
+sobre a lua.
 
 Bug corrigido: o `<svg>` do `#glow` corta o próprio desenho na borda do seu
 `viewBox` por padrão (comportamento do navegador); o pulso do círculo de
