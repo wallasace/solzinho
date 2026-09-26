@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Atualização</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: #4a3818;
+    }
+    body {
+      padding: 14px;
+      display: flex;
+    }
+    #card {
+      flex: 1;
+      background: linear-gradient(160deg, #fffdf6, #fff2d2);
+      border: 1.5px solid rgba(240, 190, 90, 0.7);
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(120, 90, 20, 0.28);
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 8px;
+    }
+    #title {
+      font-size: 14px;
+      font-weight: 700;
+    }
+    #body {
+      font-size: 12.5px;
+      line-height: 1.4;
+    }
+    .buttons {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 6px;
+    }
+    button {
+      font-size: 13px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+    }
+    #primary {
+      background: #f5c451;
+      color: #4a3818;
+      font-weight: 600;
+    }
+    #secondary {
+      background: transparent;
+      color: #4a3818;
+    }
+    .buttons.hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="card">
+    <div id="title"></div>
+    <div id="body"></div>
+    <div class="buttons" id="buttons">
+      <button type="button" id="secondary"></button>
+      <button type="button" id="primary"></button>
+    </div>
+  </div>
+
+  <script src="i18n.js"></script>
+  <script src="update-prompt.js"></script>
+</body>
+</html>

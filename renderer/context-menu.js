@@ -66,6 +66,12 @@ function render(state) {
 
   menu.appendChild(el('div', 'divider'));
 
+  const checkUpdates = el('div', 'item', T.checkForUpdates);
+  checkUpdates.addEventListener('click', () => window.menuApi.action('check-for-updates'));
+  menu.appendChild(checkUpdates);
+
+  menu.appendChild(el('div', 'divider'));
+
   const quit = el('div', 'item danger', T.quit);
   quit.addEventListener('click', () => window.menuApi.action('quit'));
   menu.appendChild(quit);

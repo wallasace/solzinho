@@ -156,3 +156,12 @@ funcionalidade, não releases.
 - Licenciado sob os mesmos termos do projeto [Meridian](https://github.com/wallasace/meridian)
   do mesmo autor: PolyForm Internal Use License 1.0.0 (source-available,
   uso pessoal/interno livre, uso comercial sob licença separada).
+
+## Atualização automática
+
+- Botão "Buscar atualização" no menu, e checagem silenciosa sozinha ao
+  abrir (só na versão instalada). Quando acha uma atualização, baixa
+  sozinha e avisa com um popup ("Atualizar agora" reinicia na hora,
+  "Depois" instala na próxima vez que o app fechar normalmente).
+- `npm run release` builda e publica o instalador direto como Release no
+  GitHub — é o feed que a versão instalada consulta.

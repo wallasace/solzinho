@@ -1,6 +1,7 @@
 const { app, BrowserWindow, screen, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { autoUpdater } = require('electron-updater');
 
 const WIN_W = 260;
 const WIN_H = 320;
@@ -39,6 +40,8 @@ let pendingTip = null; // 'calm' | 'physical' | null — dica adiada por causa d
 const PHYSICAL_TIP_MINUTES = 20; // pausas físicas (água, esticar, levantar) num ritmo próprio
 let freqPromptWin = null;
 let menuWin = null;
+let updatePromptWin = null;
+let manualUpdateCheck = false; // true só quando a checagem veio do menu ("Buscar atualização")
 let breathingActive = false;
 let breathingTimeout = null;
 
@@ -48,9 +51,11 @@ const BREATHING_COUNTDOWN_MS = 3000;
 const BREATHING_EXIT_ANIM_MS = 1800; // duração do eclipse-orbit reverso (renderer/style.css)
 
 const MENU_W = 260;
-const MENU_H = 460;
+const MENU_H = 495;
 const FREQ_PROMPT_W = 280;
 const FREQ_PROMPT_H = 150;
+const UPDATE_PROMPT_W = 300;
+const UPDATE_PROMPT_H = 180;
 // distância do topo da janela invisível do sol (WIN_H) até o topo visual do
 // sol de verdade: bottom:10px + 96px de altura do #sun-wrap (renderer/style.css)
 const SUN_SIZE = 96;
@@ -84,6 +89,14 @@ function computeFreqPromptPosition(sunBounds, area) {
   return { x, y };
 }
 
+function computeUpdatePromptPosition(sunBounds, area) {
+  let x = Math.round(sunBounds.x + sunBounds.width / 2 - UPDATE_PROMPT_W / 2);
+  let y = Math.round(getSunAnchorTop(sunBounds) - UPDATE_PROMPT_H - 12);
+  x = Math.min(Math.max(x, area.x), area.x + area.width - UPDATE_PROMPT_W);
+  y = Math.max(y, area.y);
+  return { x, y };
+}
+
 function computeMenuPosition(sunBounds, area) {
   const sunRightEdge = sunBounds.x + sunBounds.width / 2 + 48;
   const sunCenterY = getSunAnchorTop(sunBounds) + 48;
@@ -108,6 +121,11 @@ function repositionFollowerWindows() {
   if (menuWin && !menuWin.isDestroyed()) {
     const { x, y } = computeMenuPosition(sunBounds, area);
     menuWin.setBounds({ x, y, width: MENU_W, height: MENU_H });
+  }
+
+  if (updatePromptWin && !updatePromptWin.isDestroyed()) {
+    const { x, y } = computeUpdatePromptPosition(sunBounds, area);
+    updatePromptWin.setBounds({ x, y, width: UPDATE_PROMPT_W, height: UPDATE_PROMPT_H });
   }
 
   placeSpeech();
@@ -530,6 +548,86 @@ function openCustomFrequencyPrompt() {
   });
 }
 
+// status: 'ready' (baixou, pode instalar agora), 'up-to-date', 'error' ou
+// 'dev-mode' (checagem manual rodando fora do app instalado)
+function openUpdatePrompt(payload) {
+  if (updatePromptWin && !updatePromptWin.isDestroyed()) {
+    updatePromptWin.webContents.send('update-status', payload);
+    updatePromptWin.focus();
+    return;
+  }
+  const area = currentWorkArea();
+  const sunBounds = win && !win.isDestroyed() ? win.getBounds() : { x: area.x, y: area.y - WIN_H, width: WIN_W };
+  const { x, y } = computeUpdatePromptPosition(sunBounds, area);
+
+  pauseWalk('updatePrompt');
+
+  const u = new BrowserWindow({
+    width: UPDATE_PROMPT_W,
+    height: UPDATE_PROMPT_H,
+    x,
+    y,
+    transparent: true,
+    frame: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    hasShadow: false,
+    webPreferences: {
+      preload: path.join(__dirname, 'renderer', 'update-preload.js'),
+      contextIsolation: true,
+    },
+  });
+  updatePromptWin = u;
+  u.setAlwaysOnTop(true, 'screen-saver');
+  u.loadFile(path.join(__dirname, 'renderer', 'update-prompt.html'));
+  u.webContents.once('did-finish-load', () => {
+    if (!u.isDestroyed()) u.webContents.send('update-status', { ...payload, language: settings.language });
+  });
+  u.on('blur', () => {
+    if (!u.isDestroyed()) u.close();
+  });
+  u.on('closed', () => {
+    if (updatePromptWin !== u) return;
+    updatePromptWin = null;
+    resumeWalk('updatePrompt');
+  });
+}
+
+function initAutoUpdater() {
+  if (!app.isPackaged) return; // sem versão instalada não tem o que checar
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.on('update-downloaded', (info) => {
+    openUpdatePrompt({ status: 'ready', version: info.version });
+  });
+  autoUpdater.on('update-not-available', () => {
+    if (manualUpdateCheck) openUpdatePrompt({ status: 'up-to-date' });
+    manualUpdateCheck = false;
+  });
+  autoUpdater.on('error', () => {
+    if (manualUpdateCheck) openUpdatePrompt({ status: 'error' });
+    manualUpdateCheck = false;
+  });
+
+  // checa uma vez por sessão, sem pressa — o app já abre sozinho a cada
+  // login, então uma checagem silenciosa no início já é o bastante
+  setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 15000);
+}
+
+function checkForUpdatesNow() {
+  if (!app.isPackaged) {
+    openUpdatePrompt({ status: 'dev-mode' });
+    return;
+  }
+  manualUpdateCheck = true;
+  autoUpdater.checkForUpdates().catch(() => {
+    if (manualUpdateCheck) openUpdatePrompt({ status: 'error' });
+    manualUpdateCheck = false;
+  });
+}
+
 function openContextMenu() {
   // Fecha o menu anterior na hora (destroy, não close): o close() é
   // assíncrono, e o "closed" do menu antigo chegava depois de o novo já ter
@@ -623,6 +721,9 @@ function handleMenuAction(action, value) {
       settings.muted = !settings.muted;
       saveSettings();
       if (win && !win.isDestroyed()) win.webContents.send('mute-changed', settings.muted);
+      break;
+    case 'check-for-updates':
+      checkForUpdatesNow();
       break;
     case 'quit':
       app.quit();
@@ -811,6 +912,14 @@ ipcMain.on('cancel-custom-frequency', () => {
   if (freqPromptWin) freqPromptWin.close();
 });
 
+ipcMain.on('update-now', () => {
+  autoUpdater.quitAndInstall();
+});
+
+ipcMain.on('update-later', () => {
+  if (updatePromptWin) updatePromptWin.close();
+});
+
 ipcMain.on('stop-breathing-request', () => {
   endBreathingExercise();
 });
@@ -837,6 +946,7 @@ function keepSunOnScreen() {
 app.whenReady().then(() => {
   registerAutoLaunch();
   createWindow();
+  initAutoUpdater();
   screen.on('display-removed', keepSunOnScreen);
   screen.on('display-added', keepSunOnScreen);
   screen.on('display-metrics-changed', keepSunOnScreen);

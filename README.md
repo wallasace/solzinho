@@ -60,6 +60,33 @@ opção equivalente nas configurações de inicialização do Windows
 (`Configurações > Apps > Inicialização`) ou desinstalar pelo painel de
 apps do Windows.
 
+### Atualização automática
+
+A versão instalada checa por atualização sozinha ao abrir (silenciosa —
+só avisa se achar uma nova versão pronta pra instalar) e tem um item
+"⬆️ Buscar atualização" no menu (botão direito) pra checar na hora.
+Quando uma atualização é baixada, aparece um aviso com "Atualizar agora"
+(reinicia e instala na hora) ou "Depois" (instala sozinha da próxima vez
+que o solzinho for fechado normalmente).
+
+Isso só funciona pra quem instalou pelo `.exe` gerado — não existe nada
+pra checar em `npm start`. Pra publicar uma versão que os usuários
+instalados vão receber:
+
+```bash
+# 1. suba a versão em package.json (ex.: 1.0.0 -> 1.0.1)
+# 2. gere um token do GitHub com permissão de "repo" em
+#    https://github.com/settings/tokens e exporte:
+export GH_TOKEN=seu_token_aqui
+
+npm run release
+```
+
+Isso builda o instalador e publica ele como um Release em
+[github.com/wallasace/solzinho/releases](https://github.com/wallasace/solzinho/releases)
+— é ali (nos metadados que o `electron-builder` gera junto, `latest.yml`
+etc.) que a versão instalada vai olhar pra saber se tem algo novo.
+
 ## Estrutura
 
 Veja [ARCHITECTURE.md](ARCHITECTURE.md) para como o projeto é organizado

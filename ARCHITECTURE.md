@@ -226,9 +226,39 @@ do impacto (`speed` mandado por `flingTick`). `settings.muted` (menu →
 🔇/🔊) desliga os três; a troca é avisada na hora por `mute-changed`,
 igual ao idioma.
 
+## Atualização automática (`electron-updater`)
+
+`initAutoUpdater()` só roda com `app.isPackaged` (a versão instalada) —
+em `npm start` não tem feed de update nenhum pra checar, e tentar checar
+sem isso só geraria erro. Ao abrir, espera 15s (não atrapalhar a
+inicialização) e checa uma vez; o resto do ciclo de vida é
+"instale sozinho": `autoDownload` e `autoInstallOnAppQuit` ficam ligados,
+então se o usuário não clicar em nada, a atualização baixa em segundo
+plano e instala na próxima vez que o app fechar normalmente.
+
+O popup (`renderer/update-prompt.html`, mesmo padrão de janela das outras
+janelas secundárias — nasce ao aparecer, morre ao fechar, ancorada acima
+do sol) só aparece em duas situações: quando o download termina
+(`update-downloaded`, sempre, com botões "Atualizar agora" / "Depois") ou
+quando a checagem foi manual (menu → "Buscar atualização") e não achou
+nada de novo, achou o mesmo de sempre um erro, ou rodou fora do app
+instalado — a flag `manualUpdateCheck` é o que distingue "checagem
+silenciosa que não achou nada" (não avisa) de "a pessoa pediu pra checar"
+(sempre avisa alguma coisa, mesmo que seja "já está atualizado").
+
+O feed de atualização é o Releases do próprio repositório GitHub
+(`build.publish` em `package.json`, provider `github`) — não tem
+servidor próprio nem infraestrutura extra. Ver [README.md](README.md)
+pra como publicar uma versão nova (`npm run release`, precisa de
+`GH_TOKEN`).
+
 ## Scripts npm
 
 - `npm start` — roda em modo desenvolvimento (`electron .`)
 - `npm run pack` — build sem instalador, só a pasta descompactada
   (`dist/win-unpacked/`), útil pra testar rápido
-- `npm run build` — gera o instalador Windows (`dist/Solzinho Setup *.exe`)
+- `npm run build` — gera o instalador Windows (`dist/Solzinho Setup *.exe`),
+  sem publicar
+- `npm run release` — gera o instalador e publica como Release no GitHub
+  (precisa de `GH_TOKEN`); é isso que os usuários instalados recebem
+  como atualização
