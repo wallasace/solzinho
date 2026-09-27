@@ -34,6 +34,13 @@ pequeno, filho de `#sun`, posicionado por cima da boca do emoji 🌞 — abre
 e fecha rápido (`mouth-talk`) simulando fala; fica com `opacity:0` no
 resto do tempo, deixando o sorriso normal do emoji por baixo.
 
+O balão tem uma cor própria por tipo de dica — identidade visual, não só
+texto: `kind: 'tip'` (dica de acalmar) fica no âmbar padrão,
+`kind: 'physical'` (pausa física: água/alongar) fica verde-água
+(`.speech-card.physical`, mesmo layout do `.tip`, só a paleta muda). O
+`kind` chega do renderer do sol (`showBubble()`, a partir do parâmetro
+`kind` já usado pra escolher o pool de mensagens).
+
 No menu (`context-menu.js`), as opções de estado persistente (dicas,
 caminhada, sons, iniciar com o Windows) usam um indicador quadrado
 (`.toggle-dot`, preenchido e com "check" quando ativo) em vez de só trocar

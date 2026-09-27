@@ -62,6 +62,25 @@ html, body {
   transform: translateX(-50%) rotate(225deg);
 }
 
+/* dica de acalmar = âmbar (padrão); pausa física (água/alongar) = verde-água,
+   uma identidade visual própria pra diferenciar os dois tipos de lembrete */
+.speech-card.physical {
+  background: linear-gradient(160deg, #f4fdf9, #d9f2e6);
+  border-color: rgba(90, 175, 140, 0.7);
+  color: #1f4a3a;
+  box-shadow: 0 4px 10px rgba(20, 100, 75, 0.22);
+}
+
+.speech-card.physical::after {
+  background: #d9f2e6;
+  border-right-color: rgba(90, 175, 140, 0.7);
+  border-bottom-color: rgba(90, 175, 140, 0.7);
+}
+
+.speech-card.physical.below::after {
+  background: #f4fdf9;
+}
+
 .speech-card.tip {
   width: max-content;
   max-width: 230px;

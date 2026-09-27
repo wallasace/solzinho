@@ -203,3 +203,6 @@ funcionalidade, não releases.
   convida a repetir ("toque para respirar de novo", em destaque); tocando
   nele, a contagem regressiva começa de novo. Se ninguém tocar, volta ao
   normal sozinho depois de alguns segundos.
+- Balão de pausa física (água/alongar) ganhou cor própria (verde-água),
+  diferente do âmbar das dicas de acalmar — identidade visual pra
+  diferenciar os dois tipos de lembrete de cara.

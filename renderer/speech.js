@@ -8,7 +8,8 @@ function reportSize() {
 }
 
 window.speech.onContent(({ kind, text, hint }) => {
-  card.classList.toggle('tip', kind === 'tip');
+  card.classList.toggle('tip', kind === 'tip' || kind === 'physical');
+  card.classList.toggle('physical', kind === 'physical');
   card.classList.toggle('breath', kind === 'breath' || kind === 'breath-done');
   card.classList.toggle('cta', kind === 'breath-done');
   textEl.textContent = text;

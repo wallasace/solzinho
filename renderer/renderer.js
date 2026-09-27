@@ -160,7 +160,7 @@ function showBubble(kind) {
   }
 
   bubbleVisible = true;
-  window.solzinho.speechShow({ kind: 'tip', text });
+  window.solzinho.speechShow({ kind: kind === 'physical' ? 'physical' : 'tip', text });
   sunWrap.classList.add('shining');
   playChime();
 
