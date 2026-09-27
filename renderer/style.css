@@ -205,14 +205,16 @@ html, body {
    🌞 (Segoe UI Emoji); só aparece enquanto ele está "falando" (mostrando
    uma dica), abrindo e fechando rápido — reflete a fala, não some no
    resto do tempo (opacity:0 esconde ela, o sorriso do emoji fica por baixo).
-   Tamanho e contraste generosos de propósito: uma versão menor/mais clara
-   testada antes quase não dava pra perceber no tamanho real do sol (96px). */
+   Larga o suficiente pra cobrir o sorriso inteiro do emoji por baixo
+   (senão sobrava um pedacinho do sorriso original aparecendo do lado da
+   boca falando, os dois juntos); abertura mais contida que a versão
+   anterior (estava exagerada). */
 #mouth {
   position: absolute;
   top: 60%;
   left: 50%;
-  width: 20px;
-  height: 9px;
+  width: 27px;
+  height: 8px;
   background: #4a2a12;
   border-radius: 50%;
   opacity: 0;
@@ -220,14 +222,17 @@ html, body {
   pointer-events: none;
 }
 
-#sun-wrap.shining #mouth {
+/* :not(...) pra não falar enquanto também está sendo arrastado/arremessado/
+   com a tontura do impacto — a boca abrindo e fechando por cima do balanço
+   do weee/dizzy ficava interferindo no desenho dele naquele instante */
+#sun-wrap.shining:not(.weee):not(.weee-mild):not(.dizzy) #mouth {
   animation: mouth-talk 0.36s ease-in-out infinite;
 }
 
 @keyframes mouth-talk {
   0%, 100% { opacity: 0;   transform: translate(-50%, -50%) scaleY(0.2); }
-  35%      { opacity: 1;   transform: translate(-50%, -50%) scaleY(2.2); }
-  65%      { opacity: 1;   transform: translate(-50%, -50%) scaleY(2.2); }
+  35%      { opacity: 1;   transform: translate(-50%, -50%) scaleY(1.5); }
+  65%      { opacity: 1;   transform: translate(-50%, -50%) scaleY(1.5); }
 }
 
 /* óculos escuros sobrepostos aos olhos do emoji (posição aproximada); filho
@@ -237,7 +242,7 @@ html, body {
   position: absolute;
   top: 40%;
   left: 50%;
-  width: 40px;
+  width: 54px; /* 40px + 35% */
   transform: translate(-50%, -50%);
   opacity: 0;
   transition: opacity 0.2s ease;

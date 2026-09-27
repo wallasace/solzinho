@@ -65,6 +65,14 @@ modo lua/eclipse (não faz sentido nesse estado). Formato Wayfarer
 (lentes trapezoidais, mais largas em cima, com ponte e hastes grossas) —
 o "estilo Ray-Ban" clássico, pedido explicitamente.
 
+A boca (`#mouth`) precisou de alguns ajustes depois de ver rodando: larga
+o bastante (27px) pra cobrir o sorriso inteiro do emoji por baixo (senão
+sobrava um pedaço do sorriso original ao lado da boca falando, os dois
+juntos, esquisito) e uma abertura mais contida (`scaleY` de pico 1.5, era
+2.2 — estava exagerada). Também só fala com `:not(.weee):not(.weee-mild)
+:not(.dizzy)` — falar E balançar de arraste/arremesso ao mesmo tempo
+interferia visualmente um no outro.
+
 ### Modo respiração: transformação sol/lua
 
 Classes no `#sun-wrap`: `moon-mode` (a lua 🌚 surge pequena no centro e

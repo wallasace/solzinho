@@ -242,3 +242,8 @@ funcionalidade, não releases.
 - Ao parar de se mexer (arraste solto ou arremesso decaindo), uma
   animação curta de "assentar" a rotação antes de voltar pro idle/
   caminhada, em vez do corte seco que tinha antes.
+- Ajustes na boca: mais larga (cobre o sorriso do emoji por baixo por
+  inteiro, em vez de deixar um pedaço dele aparecendo do lado) e abre
+  bem menos que antes (estava exagerada). Também para de falar enquanto
+  está sendo arrastado/arremessado — os dois juntos interferiam.
+- Óculos escuros 35% maiores.
