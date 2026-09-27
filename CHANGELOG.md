@@ -217,3 +217,7 @@ funcionalidade, não releases.
   quando os dois encolhiam/cresciam ao mesmo tempo. Agora é sequencial —
   quem desaparece encolhe primeiro, só depois quem aparece cresce — sem
   nenhuma sobreposição entre os dois.
+- Removido o brilho (corona) que ficava atrás do sol ao voltar da
+  respiração (`moon-exit`) — não fazia mais sentido com a transformação
+  simplificada; continua ligado normalmente durante o modo lua/respiração
+  e ao dar uma dica.

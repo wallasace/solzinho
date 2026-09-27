@@ -43,13 +43,14 @@ html, body {
   overflow: visible;
 }
 
-/* durante o eclipse (moon-mode/breathing/moon-exit) o mesmo brilho vira a
-   coroa solar ao redor do disco escuro da lua; sendo arrastado ou voando
-   livre (weee) é o próprio brilho do sol reagindo à emoção do momento */
+/* durante o eclipse (moon-mode/breathing) o mesmo brilho vira a coroa
+   solar ao redor do disco escuro da lua; sendo arrastado ou voando livre
+   (weee) é o próprio brilho do sol reagindo à emoção do momento. Ao voltar
+   pro sol (moon-exit) fica desligado — o sol já reaparece sozinho, sem
+   precisar de um brilho atrás dele nessa hora */
 #sun-wrap.shining #glow,
 #sun-wrap.moon-mode #glow,
 #sun-wrap.breathing #glow,
-#sun-wrap.moon-exit #glow,
 #sun-wrap.weee #glow {
   opacity: 1;
 }
@@ -57,8 +58,7 @@ html, body {
 /* coroa do eclipse bem mais colada na silhueta da lua (64px) do que o
    brilho "dando uma dica" (96px de sun-wrap) — sem os raios, só o anel */
 #sun-wrap.moon-mode #glow,
-#sun-wrap.breathing #glow,
-#sun-wrap.moon-exit #glow {
+#sun-wrap.breathing #glow {
   width: 76px;
   height: 76px;
   margin-left: -38px;
@@ -93,8 +93,7 @@ html, body {
 /* no eclipse os raios ficam desligados: só o anel de coroa (#glow-circle),
    sem os raios girando */
 #sun-wrap.moon-mode #rays,
-#sun-wrap.breathing #rays,
-#sun-wrap.moon-exit #rays {
+#sun-wrap.breathing #rays {
   animation: none;
   opacity: 0;
 }
@@ -106,8 +105,7 @@ html, body {
 
 #sun-wrap.shining #glow-circle,
 #sun-wrap.moon-mode #glow-circle,
-#sun-wrap.breathing #glow-circle,
-#sun-wrap.moon-exit #glow-circle {
+#sun-wrap.breathing #glow-circle {
   animation: glow-pulse 1.5s ease-in-out infinite;
 }
 

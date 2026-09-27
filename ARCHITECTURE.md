@@ -79,12 +79,13 @@ dava pra ver os raios do sol (silhueta pontuda, maior que o disco)
 espiando por trás da lua (redonda, menor naquele instante) — encolher e
 crescer em sequência, sem sobreposição, elimina isso de vez.
 
-O `#glow` (mesmo brilho de "dando uma dica") também liga durante a
-transformação, mas vira uma coroa bem mais colada na silhueta da lua:
-menor (76px em vez de 100px) e **sem os raios girando** (`#rays {
-opacity: 0 }` nesses estados) — só o anel de brilho (`#glow-circle`)
-pulsando. Os cliques são ouvidos no `#sun-wrap`, não no `#sun`, pra
-funcionarem também sobre a lua.
+O `#glow` (mesmo brilho de "dando uma dica") também liga enquanto a lua
+está por perto (`moon-mode`/`breathing`), mas vira uma coroa bem mais
+colada na silhueta da lua: menor (76px em vez de 100px) e **sem os raios
+girando** (`#rays { opacity: 0 }` nesses estados) — só o anel de brilho
+(`#glow-circle`) pulsando. Ao voltar pro sol (`moon-exit`) o brilho fica
+desligado — o sol reaparece sozinho, sem coroa atrás. Os cliques são
+ouvidos no `#sun-wrap`, não no `#sun`, pra funcionarem também sobre a lua.
 
 Bug corrigido: o `<svg>` do `#glow` corta o próprio desenho na borda do seu
 `viewBox` por padrão (comportamento do navegador); o pulso do círculo de
