@@ -621,8 +621,28 @@ function openUpdatePrompt(payload) {
 // enquanto procura uma atualização (reais ou simuladas em dev), a coroa
 // solar gira rápido — dá um retorno visual de "buscando", já que a
 // checagem silenciosa não mostra popup nenhum na maioria das vezes
+let checkingUpdateStartedAt = 0;
+// a checagem de verdade (só bate na API do GitHub) costuma terminar rápido
+// demais pro giro chegar a aparecer — sem isso, na prática nunca dava pra
+// ver a animação de "buscando" numa instalação de verdade, só na simulação
+// do modo desenvolvimento (que já tinha um atraso fixo de propósito)
+const MIN_CHECKING_UPDATE_MS = 1400;
+
 function setCheckingUpdate(active) {
+  if (active) checkingUpdateStartedAt = Date.now();
   if (win && !win.isDestroyed()) win.webContents.send('checking-update', active);
+}
+
+// desliga o giro só depois do tempo mínimo ter passado (mesmo que a
+// checagem de verdade já tenha terminado antes), só então roda o que
+// precisa acontecer depois (mostrar popup, etc.)
+function stopCheckingUpdate(after) {
+  const elapsed = Date.now() - checkingUpdateStartedAt;
+  const wait = Math.max(0, MIN_CHECKING_UPDATE_MS - elapsed);
+  setTimeout(() => {
+    setCheckingUpdate(false);
+    if (after) after();
+  }, wait);
 }
 
 function initAutoUpdater() {
@@ -632,23 +652,24 @@ function initAutoUpdater() {
 
   autoUpdater.on('checking-for-update', () => setCheckingUpdate(true));
   autoUpdater.on('update-downloaded', (info) => {
-    setCheckingUpdate(false);
-    openUpdatePrompt({ status: 'ready', version: info.version });
+    stopCheckingUpdate(() => openUpdatePrompt({ status: 'ready', version: info.version }));
   });
   autoUpdater.on('update-not-available', () => {
-    setCheckingUpdate(false);
-    if (manualUpdateCheck) openUpdatePrompt({ status: 'up-to-date' });
-    manualUpdateCheck = false;
+    stopCheckingUpdate(() => {
+      if (manualUpdateCheck) openUpdatePrompt({ status: 'up-to-date' });
+      manualUpdateCheck = false;
+    });
   });
   autoUpdater.on('error', () => {
-    setCheckingUpdate(false);
-    if (manualUpdateCheck) openUpdatePrompt({ status: 'error' });
-    manualUpdateCheck = false;
+    stopCheckingUpdate(() => {
+      if (manualUpdateCheck) openUpdatePrompt({ status: 'error' });
+      manualUpdateCheck = false;
+    });
   });
 
   // checa uma vez por sessão, sem pressa — o app já abre sozinho a cada
   // login, então uma checagem silenciosa no início já é o bastante
-  setTimeout(() => autoUpdater.checkForUpdates().catch(() => setCheckingUpdate(false)), 15000);
+  setTimeout(() => autoUpdater.checkForUpdates().catch(() => stopCheckingUpdate()), 15000);
 }
 
 function checkForUpdatesNow() {
@@ -664,9 +685,10 @@ function checkForUpdatesNow() {
   }
   manualUpdateCheck = true;
   autoUpdater.checkForUpdates().catch(() => {
-    setCheckingUpdate(false);
-    if (manualUpdateCheck) openUpdatePrompt({ status: 'error' });
-    manualUpdateCheck = false;
+    stopCheckingUpdate(() => {
+      if (manualUpdateCheck) openUpdatePrompt({ status: 'error' });
+      manualUpdateCheck = false;
+    });
   });
 }
 

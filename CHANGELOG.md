@@ -265,3 +265,6 @@ feature milestones, not releases.
   "searching" cue, since the check almost never shows any popup. Also
   works in development mode (simulated, since there's no real
   autoUpdater without a real installation).
+- Fixed: a real update check finishes so fast that the spin never had
+  time to actually show up in an installed copy. It now stays visible for
+  at least 1.4s no matter how quickly the real check finishes.

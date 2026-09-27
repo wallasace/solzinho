@@ -95,6 +95,15 @@ doesn't even run), so `checkForUpdatesNow()` simulates it: turns
 showing the "development mode" popup — lets you validate the animation
 without needing a real installed version.
 
+Bug fixed: a real check just hits the GitHub API for `latest.yml` and
+usually finishes in well under a second — too fast for the spin to ever
+become noticeable in an actual installed copy, even though it worked
+fine in the dev-mode simulation (which already had a fixed delay on
+purpose). `stopCheckingUpdate()` now enforces a minimum visible duration
+(`MIN_CHECKING_UPDATE_MS`, 1.4s) before turning the class off and running
+whatever needs to happen next (opening a popup, etc.), regardless of how
+fast the real check actually finished.
+
 ### Breathing mode: sun/moon transformation
 
 Classes on `#sun-wrap`: `moon-mode` (the moon 🌚 appears small in the
@@ -166,6 +175,13 @@ CHANGELOG).
 Owner of all the state: the sun's position, settings (`settings.json` in
 `app.getPath('userData')`), and every timer. Renderers don't hold state
 that survives a reload — only main.js does.
+
+`settings.json` lives outside the installed program's own folder (in
+`%APPDATA%`), so the NSIS installer never touches it — an update carries
+every setting over as-is (sunglasses, language, mute, etc.). Defaults in
+the `Object.assign(...)` at the top of the file only apply the very first
+time the app ever runs, when the file doesn't exist yet; they don't reset
+anything on an update.
 
 ### Anchoring the secondary windows
 
