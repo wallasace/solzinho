@@ -438,6 +438,16 @@ apart "a silent check that found nothing" (doesn't say anything) from
 "the person asked to check" (always shows something, even if it's
 "you're already up to date").
 
+Bug fixed: `quitAndInstall()` just launches the NSIS installer and quits
+the app — it has no way to know or report whether that installer actually
+succeeds. With `build.nsis.oneClick: false`, the generated installer is
+an assisted wizard (choose the folder, etc.) that needs someone to click
+through it; running it unattended after the app has already quit left it
+stuck, never finishing, so the old version stayed installed even though
+the app had reported "update downloaded". `oneClick: true` makes the
+installer fully silent — the only setting that actually works with an
+unattended `quitAndInstall()`.
+
 The update feed is the GitHub repository's own Releases
 (`build.publish` in `package.json`, provider `github`) — no server or
 extra infrastructure of its own. See [README.md](README.md) for how to

@@ -268,3 +268,10 @@ feature milestones, not releases.
 - Fixed: a real update check finishes so fast that the spin never had
   time to actually show up in an installed copy. It now stays visible for
   at least 1.4s no matter how quickly the real check finishes.
+- Fixed a real auto-update bug: the installer was an assisted wizard
+  (`oneClick: false`), which needs someone to click through it — running
+  it unattended after the app quits (as `quitAndInstall()` does) left it
+  stuck, never finishing, so updates would report as downloaded but never
+  actually install. Switched to a fully silent installer
+  (`oneClick: true`), the only setting that works with an unattended
+  install.

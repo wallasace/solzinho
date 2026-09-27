@@ -1,6 +1,6 @@
 {
   "name": "solzinho",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Amiguinho de desktop que anda pela tela e traz dicas de acalmar baseadas em psicologia",
   "main": "main.js",
   "private": true,
@@ -40,9 +40,8 @@
       "icon": "build/icon.png"
     },
     "nsis": {
-      "oneClick": false,
+      "oneClick": true,
       "perMachine": false,
-      "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
     }
