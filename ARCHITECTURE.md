@@ -20,6 +20,16 @@ monitor certo evita o bug do Electron de perder clique ao trocar de monitor
 se ainda for a janela atual: antes, o `closed` assíncrono de um menu antigo
 apagava a referência do menu novo, que ficava órfão e o menu parava de abrir.
 
+Bug corrigido: diferente do balão (`focusable: false`, nunca disputa o
+topo da pilha), o menu precisa ser focável pra receber clique — e assim
+que abre, vira a janela mais no topo entre as de nível `'screen-saver'`.
+Se o sol se movesse depois (arraste ou quique de arremesso com o menu
+aberto) e passasse por cima da área do menu, ficava visualmente por
+baixo dele, escondido. `repositionFollowerWindows()` agora também chama
+`win.moveTop()` nesse caso — só reordena a pilha, não tira o foco do
+menu — trazendo o sol de volta pro topo sempre que ele (ou um dos
+popups) se move.
+
 ### Balão (`speech.html`)
 
 O renderer do sol decide o texto (dica sorteada, fase da respiração) e manda

@@ -129,6 +129,15 @@ function repositionFollowerWindows() {
   }
 
   placeSpeech();
+
+  // O menu (diferente do balão, que nasce com `focusable: false`) rouba o
+  // topo da pilha de janelas "screen-saver" assim que abre; sem isso, o sol
+  // ficava por baixo dele sempre que se movia até ali (arraste ou quique de
+  // arremesso enquanto o menu está aberto). `moveTop()` só reordena a
+  // pilha, não tira o foco do menu — continua clicável normalmente.
+  if ((menuWin && !menuWin.isDestroyed()) || (freqPromptWin && !freqPromptWin.isDestroyed())) {
+    win.moveTop();
+  }
 }
 
 function settingsPath() {

@@ -206,3 +206,9 @@ funcionalidade, não releases.
 - Balão de pausa física (água/alongar) ganhou cor própria (verde-água),
   diferente do âmbar das dicas de acalmar — identidade visual pra
   diferenciar os dois tipos de lembrete de cara.
+- Centralizado o texto das bandeirinhas de idioma (BR/US) no menu —
+  estava levemente descentralizado dentro do retângulo do botão.
+- Corrigido: com o menu aberto, se o sol se movesse (arraste ou quique de
+  arremesso) até a área do menu, ficava escondido atrás dele — o menu,
+  diferente do balão, rouba o topo da pilha de janelas ao abrir. Agora o
+  sol volta pro topo sempre que se reposiciona com um popup aberto.
