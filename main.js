@@ -51,7 +51,7 @@ const BREATHING_COUNTDOWN_MS = 3000;
 const BREATHING_EXIT_ANIM_MS = 700; // duração da transformação lua->sol (renderer/style.css)
 
 const MENU_W = 260;
-const MENU_H = 590;
+const MENU_H = 612;
 const FREQ_PROMPT_W = 280;
 const FREQ_PROMPT_H = 150;
 const UPDATE_PROMPT_W = 300;
@@ -757,6 +757,7 @@ function openContextMenu() {
       muted: settings.muted,
       autoLaunch: settings.autoLaunch,
       sunglasses: settings.sunglasses,
+      version: app.getVersion(),
     });
   });
   m.on('blur', () => {

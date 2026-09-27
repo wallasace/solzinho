@@ -456,6 +456,11 @@ The update feed is the GitHub repository's own Releases
 extra infrastructure of its own. See [README.md](README.md) for how to
 publish a new version (`npm run release`, needs `GH_TOKEN`).
 
+The menu shows the installed version at the bottom (`Solzinho v{x.y.z}`,
+from `app.getVersion()`) — a quick, always-visible way to confirm an
+update actually landed, instead of having to guess from a subtle visual
+change.
+
 ## Reporting a bug
 
 "🐛 Report a bug" in the menu (`reportBug()` in `main.js`) doesn't send

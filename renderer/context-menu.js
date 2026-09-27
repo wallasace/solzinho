@@ -111,6 +111,9 @@ function render(state) {
   const quit = el('div', 'item danger', T.quit);
   quit.addEventListener('click', () => window.menuApi.action('quit'));
   menu.appendChild(quit);
+
+  menu.appendChild(el('div', 'divider'));
+  menu.appendChild(el('div', 'version-tag', 'Solzinho v' + state.version));
 }
 
 window.menuApi.onState(render);

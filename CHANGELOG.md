@@ -277,3 +277,6 @@ feature milestones, not releases.
   install.
 - Default language switched to English — a fresh install now starts in
   English, switchable to Portuguese from the menu at any time.
+- The menu now shows the installed version at the bottom
+  (`Solzinho v{x.y.z}`) — an easy way to confirm an update actually
+  landed.
