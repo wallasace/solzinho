@@ -247,3 +247,6 @@ funcionalidade, não releases.
   bem menos que antes (estava exagerada). Também para de falar enquanto
   está sendo arrastado/arremessado — os dois juntos interferiam.
 - Óculos escuros 35% maiores.
+- Corrigido: clicar no sol com as dicas pausadas ficava mudo (nenhuma
+  bolha aparece pra tocar o barulhinho de sempre). Agora toca o chime
+  direto nesse caso.

@@ -736,6 +736,7 @@ function handleMenuAction(action, value) {
     case 'toggle-tips':
       settings.tipsPaused = !settings.tipsPaused;
       saveSettings();
+      if (win && !win.isDestroyed()) win.webContents.send('tips-paused-changed', settings.tipsPaused);
       break;
     case 'set-frequency':
       settings.frequencyMinutes = value;

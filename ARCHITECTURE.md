@@ -190,6 +190,17 @@ cima dela).
 jitter. Os dois passam pelo mesmo `triggerBubble(kind)` /
 `isBusy()` / `pendingTip`, então nunca aparecem um por cima do outro.
 
+Com as dicas pausadas (`settings.tipsPaused`), `triggerBubble()` retorna
+na hora — clicar no sol nesse estado pedia uma dica que nunca aparecia,
+sem bolha nenhuma pra tocar o barulhinho de sempre (`playChime()` vive
+dentro de `showBubble()`, só dispara quando a bolha realmente aparece).
+O clique ficava mudo. Corrigido tocando o chime direto no clique
+(`renderer.js`) quando `tipsPaused` está ligado — o renderer passa a
+acompanhar esse valor via `init-settings` e um novo evento
+`tips-paused-changed` (enviado pelo main só quando o menu alterna a
+opção). Fora desse caso, quem toca o som continua sendo `showBubble()`
+como sempre, pra não duplicar.
+
 ## Arraste manual (não usa `-webkit-app-region: drag`)
 
 O sol começou usando a região de drag nativa do Chromium, mas isso faz o

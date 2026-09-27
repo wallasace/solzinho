@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('solzinho', {
   onBreathingDonePrompt: (callback) => ipcRenderer.on('breathing-done-prompt', () => callback()),
   onLanguageChanged: (callback) => ipcRenderer.on('language-changed', (_e, lang) => callback(lang)),
   onMuteChanged: (callback) => ipcRenderer.on('mute-changed', (_e, muted) => callback(muted)),
+  onTipsPausedChanged: (callback) => ipcRenderer.on('tips-paused-changed', (_e, paused) => callback(paused)),
   onSunglassesChanged: (callback) => ipcRenderer.on('sunglasses-changed', (_e, value) => callback(value)),
   onBounce: (callback) => ipcRenderer.on('bounce', (_e, data) => callback(data)),
   onFlinging: (callback) => ipcRenderer.on('flinging', (_e, active) => callback(active)),

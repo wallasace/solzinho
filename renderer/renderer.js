@@ -14,6 +14,7 @@ let bubbleHideTimer = null;
 let bubbleVisible = false;
 let audioCtx = null;
 let muted = false;
+let tipsPaused = false;
 
 function applyLanguage(lang) {
   currentLanguage = I18N[lang] ? lang : 'pt';
@@ -21,6 +22,10 @@ function applyLanguage(lang) {
 
 function applyMute(value) {
   muted = value;
+}
+
+function applyTipsPaused(value) {
+  tipsPaused = value;
 }
 
 function applySunglasses(value) {
@@ -363,6 +368,10 @@ sunWrap.addEventListener('click', () => {
     window.solzinho.stopBreathing();
     return;
   }
+  // com as dicas pausadas, pedir uma dica não mostra bolha nenhuma (o
+  // barulhinho normal só toca junto com a bolha aparecendo) — sem isso, o
+  // clique ficava mudo, sem nenhum retorno sonoro
+  if (tipsPaused) playChime();
   window.solzinho.requestTip();
 });
 
@@ -437,6 +446,7 @@ window.solzinho.onInit((settings) => {
   applyLanguage(settings.language || 'pt');
   applyMute(!!settings.muted);
   applySunglasses(!!settings.sunglasses);
+  applyTipsPaused(!!settings.tipsPaused);
   setState(settings.walking ? 'walk' : 'idle');
 });
 
@@ -447,6 +457,7 @@ window.solzinho.onBreathingStart(startBreathing);
 window.solzinho.onBreathingEnd(endBreathing);
 window.solzinho.onLanguageChanged(applyLanguage);
 window.solzinho.onMuteChanged(applyMute);
+window.solzinho.onTipsPausedChanged(applyTipsPaused);
 window.solzinho.onSunglassesChanged(applySunglasses);
 window.solzinho.onFlinging(setFlinging);
 window.solzinho.onFlingSpeed(setFlingSpeed);
