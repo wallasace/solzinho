@@ -56,6 +56,13 @@ caminhada, sons, iniciar com o Windows) usam um indicador quadrado
 (`.toggle-dot`, preenchido e com "check" quando ativo) em vez de só trocar
 o texto do verbo — dá pra ver o estado atual de cara, sem precisar ler.
 
+Óculos escuros (`#sunglasses`, um SVG de dois lados/ponte, filho de
+`#sun` — acompanha sozinho qualquer bob/talk/wobble que o sol já tiver,
+sem reaplicar animação num elemento irmão): `settings.sunglasses`
+(persistido), alternado pelo botão só-ícone (🕶️, estilo `.lang-btn`
+reaproveitado) no menu, ação `toggle-sunglasses`. Desligado durante o
+modo lua/eclipse (não faz sentido nesse estado).
+
 ### Modo respiração: transformação sol/lua
 
 Classes no `#sun-wrap`: `moon-mode` (a lua 🌚 surge pequena no centro e

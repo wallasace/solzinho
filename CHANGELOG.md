@@ -221,3 +221,6 @@ funcionalidade, não releases.
   respiração (`moon-exit`) — não fazia mais sentido com a transformação
   simplificada; continua ligado normalmente durante o modo lua/respiração
   e ao dar uma dica.
+- Boca de fala aumentada e com mais contraste — a versão anterior era
+  pequena/clara demais e quase não dava pra perceber no tamanho real.
+- Novo item de menu (só ícone, 🕶️): coloca/tira óculos escuros no sol.

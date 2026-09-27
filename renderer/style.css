@@ -197,27 +197,55 @@ html, body {
 /* boca sobreposta ao rosto do emoji, na posição aproximada da boca do
    🌞 (Segoe UI Emoji); só aparece enquanto ele está "falando" (mostrando
    uma dica), abrindo e fechando rápido — reflete a fala, não some no
-   resto do tempo (opacity:0 esconde ela, o sorriso do emoji fica por baixo) */
+   resto do tempo (opacity:0 esconde ela, o sorriso do emoji fica por baixo).
+   Tamanho e contraste generosos de propósito: uma versão menor/mais clara
+   testada antes quase não dava pra perceber no tamanho real do sol (96px). */
 #mouth {
   position: absolute;
-  top: 59%;
+  top: 60%;
   left: 50%;
-  width: 17px;
-  height: 8px;
-  background: #7a3b1e;
+  width: 20px;
+  height: 9px;
+  background: #4a2a12;
   border-radius: 50%;
   opacity: 0;
-  transform: translate(-50%, -50%) scaleY(0.25);
+  transform: translate(-50%, -50%) scaleY(0.2);
   pointer-events: none;
 }
 
 #sun-wrap.shining #mouth {
-  animation: mouth-talk 0.3s ease-in-out infinite;
+  animation: mouth-talk 0.36s ease-in-out infinite;
 }
 
 @keyframes mouth-talk {
-  0%, 100% { opacity: 0; transform: translate(-50%, -50%) scaleY(0.25); }
-  50% { opacity: 1; transform: translate(-50%, -50%) scaleY(2); }
+  0%, 100% { opacity: 0;   transform: translate(-50%, -50%) scaleY(0.2); }
+  35%      { opacity: 1;   transform: translate(-50%, -50%) scaleY(2.2); }
+  65%      { opacity: 1;   transform: translate(-50%, -50%) scaleY(2.2); }
+}
+
+/* óculos escuros sobrepostos aos olhos do emoji (posição aproximada); filho
+   de #sun pra acompanhar sozinho qualquer bob/talk/wobble que o sol já
+   tiver, sem precisar reaplicar a mesma animação num elemento irmão */
+#sunglasses {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  width: 40px;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+#sun-wrap.sunglasses-on #sunglasses {
+  opacity: 1;
+}
+
+/* não faz sentido usar óculos durante o modo lua/eclipse */
+#sun-wrap.moon-mode #sunglasses,
+#sun-wrap.breathing #sunglasses,
+#sun-wrap.moon-exit #sunglasses {
+  opacity: 0;
 }
 
 @keyframes talk-left {

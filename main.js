@@ -51,7 +51,7 @@ const BREATHING_COUNTDOWN_MS = 3000;
 const BREATHING_EXIT_ANIM_MS = 1800; // duração da transformação lua->sol (renderer/style.css)
 
 const MENU_W = 260;
-const MENU_H = 555;
+const MENU_H = 590;
 const FREQ_PROMPT_W = 280;
 const FREQ_PROMPT_H = 150;
 const UPDATE_PROMPT_W = 300;
@@ -161,7 +161,7 @@ function saveSettings() {
 }
 
 const settings = Object.assign(
-  { frequencyMinutes: 30, tipsPaused: false, walking: true, language: 'pt', muted: false, autoLaunch: true },
+  { frequencyMinutes: 30, tipsPaused: false, walking: true, language: 'pt', muted: false, autoLaunch: true, sunglasses: false },
   loadSettings()
 );
 
@@ -716,6 +716,7 @@ function openContextMenu() {
       language: settings.language,
       muted: settings.muted,
       autoLaunch: settings.autoLaunch,
+      sunglasses: settings.sunglasses,
     });
   });
   m.on('blur', () => {
@@ -769,6 +770,11 @@ function handleMenuAction(action, value) {
       settings.autoLaunch = !settings.autoLaunch;
       saveSettings();
       registerAutoLaunch();
+      break;
+    case 'toggle-sunglasses':
+      settings.sunglasses = !settings.sunglasses;
+      saveSettings();
+      if (win && !win.isDestroyed()) win.webContents.send('sunglasses-changed', settings.sunglasses);
       break;
     case 'check-for-updates':
       checkForUpdatesNow();

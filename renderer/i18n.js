@@ -39,6 +39,8 @@ const I18N = {
     phases: ['Inspire', 'Segure', 'Solte', 'Segure'],
     breathingDoneText: 'Como você está? 🌬️',
     breathingAgainHint: 'toque para respirar de novo',
+    enableSunglasses: 'Colocar óculos escuros',
+    disableSunglasses: 'Tirar óculos escuros',
   },
   en: {
     pauseTips: 'Pause tips',
@@ -78,5 +80,7 @@ const I18N = {
     phases: ['Inhale', 'Hold', 'Exhale', 'Hold'],
     breathingDoneText: 'How are you feeling? 🌬️',
     breathingAgainHint: 'tap to breathe again',
+    enableSunglasses: 'Put on sunglasses',
+    disableSunglasses: 'Take off sunglasses',
   },
 };

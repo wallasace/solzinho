@@ -77,6 +77,13 @@ function render(state) {
   );
   menu.appendChild(toggleAutoLaunch);
 
+  const sunglassesRow = el('div', 'lang-row');
+  const sunglassesBtn = el('span', 'lang-btn' + (state.sunglasses ? ' active' : ''), '🕶️');
+  sunglassesBtn.title = state.sunglasses ? T.disableSunglasses : T.enableSunglasses;
+  sunglassesBtn.addEventListener('click', () => window.menuApi.action('toggle-sunglasses'));
+  sunglassesRow.appendChild(sunglassesBtn);
+  menu.appendChild(sunglassesRow);
+
   menu.appendChild(el('div', 'divider'));
   menu.appendChild(el('div', 'section-label', T.languageSection));
 

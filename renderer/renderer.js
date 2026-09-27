@@ -22,6 +22,10 @@ function applyMute(value) {
   muted = value;
 }
 
+function applySunglasses(value) {
+  sunWrap.classList.toggle('sunglasses-on', !!value);
+}
+
 function getAudioCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -393,6 +397,7 @@ function setFlinging(active) {
 window.solzinho.onInit((settings) => {
   applyLanguage(settings.language || 'pt');
   applyMute(!!settings.muted);
+  applySunglasses(!!settings.sunglasses);
   setState(settings.walking ? 'walk' : 'idle');
 });
 
@@ -403,5 +408,6 @@ window.solzinho.onBreathingStart(startBreathing);
 window.solzinho.onBreathingEnd(endBreathing);
 window.solzinho.onLanguageChanged(applyLanguage);
 window.solzinho.onMuteChanged(applyMute);
+window.solzinho.onSunglassesChanged(applySunglasses);
 window.solzinho.onFlinging(setFlinging);
 window.solzinho.onBounce(playWallBounce);
