@@ -52,7 +52,8 @@ html, body {
 #sun-wrap.moon-mode #glow,
 #sun-wrap.breathing #glow,
 #sun-wrap.weee #glow,
-#sun-wrap.weee-mild #glow {
+#sun-wrap.weee-mild #glow,
+#sun-wrap.checking-update #glow {
   opacity: 1;
 }
 
@@ -96,6 +97,13 @@ html, body {
   animation: ray-spin 40s linear infinite;
 }
 
+/* buscando atualização: giro rápido e visível — é o retorno de "buscando",
+   já que a checagem quase sempre não mostra popup nenhum (só quando acha
+   uma atualização de verdade ou quando é pedido manual e falha) */
+#sun-wrap.checking-update:not(.moon-mode):not(.breathing):not(.moon-exit) #rays {
+  animation: ray-spin 1.2s linear infinite;
+}
+
 /* no eclipse os raios ficam desligados: só o anel de coroa (#glow-circle),
    sem os raios girando */
 #sun-wrap.moon-mode #rays,
@@ -111,7 +119,8 @@ html, body {
 
 #sun-wrap.shining #glow-circle,
 #sun-wrap.moon-mode #glow-circle,
-#sun-wrap.breathing #glow-circle {
+#sun-wrap.breathing #glow-circle,
+#sun-wrap.checking-update #glow-circle {
   animation: glow-pulse 1.5s ease-in-out infinite;
 }
 

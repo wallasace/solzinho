@@ -618,35 +618,53 @@ function openUpdatePrompt(payload) {
   });
 }
 
+// enquanto procura uma atualização (reais ou simuladas em dev), a coroa
+// solar gira rápido — dá um retorno visual de "buscando", já que a
+// checagem silenciosa não mostra popup nenhum na maioria das vezes
+function setCheckingUpdate(active) {
+  if (win && !win.isDestroyed()) win.webContents.send('checking-update', active);
+}
+
 function initAutoUpdater() {
   if (!app.isPackaged) return; // sem versão instalada não tem o que checar
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
 
+  autoUpdater.on('checking-for-update', () => setCheckingUpdate(true));
   autoUpdater.on('update-downloaded', (info) => {
+    setCheckingUpdate(false);
     openUpdatePrompt({ status: 'ready', version: info.version });
   });
   autoUpdater.on('update-not-available', () => {
+    setCheckingUpdate(false);
     if (manualUpdateCheck) openUpdatePrompt({ status: 'up-to-date' });
     manualUpdateCheck = false;
   });
   autoUpdater.on('error', () => {
+    setCheckingUpdate(false);
     if (manualUpdateCheck) openUpdatePrompt({ status: 'error' });
     manualUpdateCheck = false;
   });
 
   // checa uma vez por sessão, sem pressa — o app já abre sozinho a cada
   // login, então uma checagem silenciosa no início já é o bastante
-  setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 15000);
+  setTimeout(() => autoUpdater.checkForUpdates().catch(() => setCheckingUpdate(false)), 15000);
 }
 
 function checkForUpdatesNow() {
   if (!app.isPackaged) {
-    openUpdatePrompt({ status: 'dev-mode' });
+    // sem instalação real não tem autoUpdater de verdade, mas ainda dá pra
+    // validar a animação de "buscando" no modo desenvolvimento
+    setCheckingUpdate(true);
+    setTimeout(() => {
+      setCheckingUpdate(false);
+      openUpdatePrompt({ status: 'dev-mode' });
+    }, 1600);
     return;
   }
   manualUpdateCheck = true;
   autoUpdater.checkForUpdates().catch(() => {
+    setCheckingUpdate(false);
     if (manualUpdateCheck) openUpdatePrompt({ status: 'error' });
     manualUpdateCheck = false;
   });

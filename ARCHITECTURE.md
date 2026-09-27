@@ -73,6 +73,25 @@ juntos, esquisito) e uma abertura mais contida (`scaleY` de pico 1.5, era
 :not(.dizzy)` — falar E balançar de arraste/arremesso ao mesmo tempo
 interferia visualmente um no outro.
 
+`settings.sunglasses` tem `false` como padrão de verdade — nasce
+desligado numa instalação nova.
+
+### Retorno visual ao buscar atualização
+
+`#sun-wrap.checking-update` liga o mesmo `#glow` de outros estados, com
+os raios girando rápido (1,2s, bem mais rápido que qualquer outro
+estado) — um "buscando" visível, já que a checagem quase sempre não
+mostra popup nenhum (só quando acha uma atualização de verdade ou
+quando é pedido manual e falha). `setCheckingUpdate()` (`main.js`) liga
+isso a partir do evento `checking-for-update` do `autoUpdater` de
+verdade (só existe com o app empacotado) e desliga nos outros eventos
+(`update-downloaded`, `update-not-available`, `error`). Em modo
+desenvolvimento não tem `autoUpdater` de verdade pra escutar
+(`initAutoUpdater()` nem roda), então `checkForUpdatesNow()` simula: liga
+`checking-update` na hora, espera 1,6s e desliga antes de mostrar o
+popup de "modo desenvolvimento" — dá pra validar a animação sem precisar
+de uma versão instalada de verdade.
+
 ### Modo respiração: transformação sol/lua
 
 Classes no `#sun-wrap`: `moon-mode` (a lua 🌚 surge pequena no centro e

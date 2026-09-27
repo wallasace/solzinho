@@ -250,3 +250,8 @@ funcionalidade, não releases.
 - Corrigido: clicar no sol com as dicas pausadas ficava mudo (nenhuma
   bolha aparece pra tocar o barulhinho de sempre). Agora toca o chime
   direto nesse caso.
+- Óculos escuros voltam desligados por padrão numa instalação nova.
+- Enquanto busca atualização, a coroa solar gira rápido — um retorno
+  visual de "buscando", já que a checagem quase sempre não mostra popup
+  nenhum. Funciona também em modo desenvolvimento (simulado, já que não
+  existe autoUpdater de verdade sem uma instalação real).

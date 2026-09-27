@@ -32,6 +32,10 @@ function applySunglasses(value) {
   sunWrap.classList.toggle('sunglasses-on', !!value);
 }
 
+function setCheckingUpdate(active) {
+  sunWrap.classList.toggle('checking-update', !!active);
+}
+
 function getAudioCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -459,6 +463,7 @@ window.solzinho.onLanguageChanged(applyLanguage);
 window.solzinho.onMuteChanged(applyMute);
 window.solzinho.onTipsPausedChanged(applyTipsPaused);
 window.solzinho.onSunglassesChanged(applySunglasses);
+window.solzinho.onCheckingUpdate(setCheckingUpdate);
 window.solzinho.onFlinging(setFlinging);
 window.solzinho.onFlingSpeed(setFlingSpeed);
 window.solzinho.onBounce(playWallBounce);
