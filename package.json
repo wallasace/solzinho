@@ -1,6 +1,6 @@
 {
   "name": "solzinho",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Amiguinho de desktop que anda pela tela e traz dicas de acalmar baseadas em psicologia",
   "main": "main.js",
   "private": true,
