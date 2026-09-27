@@ -280,3 +280,7 @@ feature milestones, not releases.
 - The menu now shows the installed version at the bottom
   (`Solzinho v{x.y.z}`) — an easy way to confirm an update actually
   landed.
+- Fixed: the glow's rays extend well past the glow's own box, and with
+  only 10px of margin between the sun and the window's bottom edge, the
+  bottom ray tips got clipped every time a tip showed. Margin bumped to
+  30px.

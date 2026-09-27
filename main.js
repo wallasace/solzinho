@@ -57,9 +57,13 @@ const FREQ_PROMPT_H = 150;
 const UPDATE_PROMPT_W = 300;
 const UPDATE_PROMPT_H = 180;
 // distância do topo da janela invisível do sol (WIN_H) até o topo visual do
-// sol de verdade: bottom:10px + 96px de altura do #sun-wrap (renderer/style.css)
+// sol de verdade: bottom:30px + 96px de altura do #sun-wrap (renderer/style.css).
+// 30px (era 10px) porque o brilho (raios) passa bem além da caixa do #glow
+// (raio chega a 130 num viewBox de 200, ou seja ~15px além da borda física
+// da caixa de 100px) — com só 10px de margem, a ponta de baixo dos raios
+// ficava cortada pelo `overflow: hidden` do body sempre que dava uma dica
 const SUN_SIZE = 96;
-const SUN_BOTTOM_MARGIN = 10;
+const SUN_BOTTOM_MARGIN = 30;
 const SUN_VISUAL_TOP_MARGIN = SUN_BOTTOM_MARGIN + SUN_SIZE;
 const SUN_SIDE_OFFSET = (WIN_W - SUN_SIZE) / 2;
 

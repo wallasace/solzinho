@@ -198,6 +198,17 @@ holdover from when the bubble used to live inside it. That's why
 without them, anything anchoring to the sun would end up anchoring to
 the top of the invisible window, well above where the sun actually is.
 
+Bug fixed: `SUN_BOTTOM_MARGIN` (the gap between `#sun-wrap` and the
+window's own bottom edge) used to be `10px`. The glow's rays extend well
+past the `#glow` element's own 100px box (they reach radius 130 in a
+200-unit viewBox, about 15px beyond the box's physical edge on every
+side) — with only 10px of margin below, the bottom tips of the rays
+went past the window's actual bottom edge and got clipped by
+`overflow: hidden` on `html`/`body` every time a tip showed (or any other
+`shining`-like state). Bumped to `30px`, measured with
+`getBoundingClientRect()` at the glow-pulse's peak to confirm the rays
+now stay well clear of both edges.
+
 ### Reasons to pause walking (`pauseReasons`)
 
 The sun's walk can be paused for several reasons at the same time:
