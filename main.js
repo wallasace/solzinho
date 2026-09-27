@@ -161,7 +161,7 @@ function saveSettings() {
 }
 
 const settings = Object.assign(
-  { frequencyMinutes: 30, tipsPaused: false, walking: true, language: 'pt', muted: false, autoLaunch: true, sunglasses: false },
+  { frequencyMinutes: 30, tipsPaused: false, walking: true, language: 'en', muted: false, autoLaunch: true, sunglasses: false },
   loadSettings()
 );
 

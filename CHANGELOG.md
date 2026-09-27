@@ -275,3 +275,5 @@ feature milestones, not releases.
   actually install. Switched to a fully silent installer
   (`oneClick: true`), the only setting that works with an unattended
   install.
+- Default language switched to English — a fresh install now starts in
+  English, switchable to Portuguese from the menu at any time.

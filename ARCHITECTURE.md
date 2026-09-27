@@ -387,6 +387,9 @@ frequency window). The tip messages themselves live in
 saves it to `settings.language` and sends `language-changed` to the main
 window to update it on the spot — no app restart needed.
 
+`settings.language` defaults to `'en'` — a fresh install starts in
+English, switchable to Portuguese from the menu at any time.
+
 ## Sound
 
 Every sound in the app is synthesized on the spot with the Web Audio API
