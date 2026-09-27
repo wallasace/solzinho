@@ -1,5 +1,6 @@
 const sunWrap = document.getElementById('sun-wrap');
 const sunEl = document.getElementById('sun');
+const faceEl = document.getElementById('face');
 const SUN_FACE_NORMAL = '🌞';
 const SUN_FACE_WEEE = '😆'; // "weeeee" — sendo arrastado ou voando livre depois do arremesso
 const SUN_FACE_DIZZY = '😵'; // tontura só no instante do impacto contra a "parede"
@@ -293,18 +294,36 @@ let isDragging = false;
 let dragMoved = false;
 let dragStart = null;
 let flingActive = false;
+let flingSpeed = 0;
 let impactActive = false;
 const DRAG_THRESHOLD = 4;
+
+// Graus de empolgação durante o arremesso: bem devagar (perto de já ter
+// parado) some a animação e volta pro idle/caminhada de baixo sozinho;
+// devagar é uma versão contida do "weee" (corpo, sem trocar a cara);
+// rápido é o "weee" cheio (corpo + cara). Ao arrastar com a mão é sempre
+// o "weee" cheio, não depende de velocidade.
+const FLING_CALM_SPEED = 40; // abaixo disso, já pode ser tratado como "parado"
+const FLING_WILD_SPEED = 260; // acima disso, empolgação máxima
+
+function setFlingSpeed(speed) {
+  flingSpeed = speed;
+  updateMotionVisual();
+}
 
 // Estado de movimento do sol: "weee" enquanto está sendo arrastado (depois
 // de já ter se movido) ou voando livre após o arremesso; "dizzy" só no
 // instante de bater na "parede" (some sozinho quando o squash termina);
 // fora disso, cara e corpo normais.
 function updateMotionVisual() {
-  const moving = isDragging || flingActive;
+  const flingCalm = flingActive && flingSpeed <= FLING_CALM_SPEED;
+  const moving = isDragging || (flingActive && !flingCalm);
+  const wild = moving && (isDragging || flingSpeed >= FLING_WILD_SPEED);
+  const mild = moving && !wild;
   sunWrap.classList.toggle('dizzy', impactActive);
-  sunWrap.classList.toggle('weee', moving && !impactActive);
-  sunEl.textContent = impactActive ? SUN_FACE_DIZZY : moving ? SUN_FACE_WEEE : SUN_FACE_NORMAL;
+  sunWrap.classList.toggle('weee', wild && !impactActive);
+  sunWrap.classList.toggle('weee-mild', mild && !impactActive);
+  faceEl.textContent = impactActive ? SUN_FACE_DIZZY : wild ? SUN_FACE_WEEE : SUN_FACE_NORMAL;
 }
 
 function playClickBounce() {
@@ -391,6 +410,7 @@ sunWrap.addEventListener('animationend', (event) => {
 // especial (o "pode manter como está" do pedido original).
 function setFlinging(active) {
   flingActive = active;
+  if (!active) flingSpeed = 0;
   updateMotionVisual();
 }
 
@@ -410,4 +430,5 @@ window.solzinho.onLanguageChanged(applyLanguage);
 window.solzinho.onMuteChanged(applyMute);
 window.solzinho.onSunglassesChanged(applySunglasses);
 window.solzinho.onFlinging(setFlinging);
+window.solzinho.onFlingSpeed(setFlingSpeed);
 window.solzinho.onBounce(playWallBounce);

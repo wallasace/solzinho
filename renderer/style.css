@@ -51,7 +51,8 @@ html, body {
 #sun-wrap.shining #glow,
 #sun-wrap.moon-mode #glow,
 #sun-wrap.breathing #glow,
-#sun-wrap.weee #glow {
+#sun-wrap.weee #glow,
+#sun-wrap.weee-mild #glow {
   opacity: 1;
 }
 
@@ -84,10 +85,15 @@ html, body {
   animation: ray-spin 6s linear infinite;
 }
 
-/* sendo arrastado ou voando livre: gira bem devagar, bem mais devagar que
-   qualquer outro estado */
+/* sendo arrastado ou voando livre (rápido): gira bem devagar, bem mais
+   devagar que qualquer outro estado */
 #sun-wrap.weee:not(.moon-mode):not(.breathing):not(.moon-exit) #rays {
   animation: ray-spin 26s linear infinite;
+}
+
+/* voando livre devagar (empolgação contida): gira ainda mais devagar */
+#sun-wrap.weee-mild:not(.moon-mode):not(.breathing):not(.moon-exit) #rays {
+  animation: ray-spin 40s linear infinite;
 }
 
 /* no eclipse os raios ficam desligados: só o anel de coroa (#glow-circle),
@@ -110,7 +116,8 @@ html, body {
 }
 
 /* diminui um pouco e volta — bem mais sutil que o glow-pulse normal */
-#sun-wrap.weee #glow-circle {
+#sun-wrap.weee #glow-circle,
+#sun-wrap.weee-mild #glow-circle {
   animation: fling-glow-pulse 1.6s ease-in-out infinite;
 }
 
@@ -329,12 +336,17 @@ html, body {
   100% { opacity: 1;    transform: scale(1); }
 }
 
+/* respiração da lua com um pouco de squash-and-stretch em vez de só um
+   pulso uniforme: infla mais (largo+alto) e sobe de leve no "inspira",
+   segura, esvazia abaixo do normal (mais estreito e baixo) e desce de
+   leve no "solta", segura nesse estado — fica mais parecido com um
+   corpo respirando de verdade do que com um balão enchendo/esvaziando */
 @keyframes breath-cycle {
-  0% { transform: scale(1); }
-  25% { transform: scale(1.3); }
-  50% { transform: scale(1.3); }
-  75% { transform: scale(1); }
-  100% { transform: scale(1); }
+  0%   { transform: scale(1, 1)       translateY(0); }
+  25%  { transform: scale(1.22, 1.32) translateY(-4px); }
+  50%  { transform: scale(1.22, 1.32) translateY(-4px); }
+  75%  { transform: scale(0.96, 0.9)  translateY(2px); }
+  100% { transform: scale(1, 1)       translateY(0); }
 }
 
 /* Bounce ao clicar no sol. Fica no #sun-wrap (que não tem outra animação)
@@ -400,6 +412,27 @@ html, body {
 @keyframes weee-wobble-left {
   0%, 100% { transform: scale(-1, 1) rotate(-16deg) scale(1.02, 0.96); }
   50% { transform: scale(-1, 1) rotate(16deg) scale(0.96, 1.04); }
+}
+
+/* voando livre devagar (empolgação contida, perto de já ir parar): um
+   balanço bem mais discreto que o weee cheio, sem trocar a cara — é o
+   meio-termo entre o "weeeee" e voltar pro idle/caminhada de vez */
+#sun-wrap.weee-mild #sun {
+  animation: weee-wobble-mild 0.7s ease-in-out infinite;
+}
+
+#sun-wrap.weee-mild.facing-left #sun {
+  animation: weee-wobble-mild-left 0.7s ease-in-out infinite;
+}
+
+@keyframes weee-wobble-mild {
+  0%, 100% { transform: rotate(-5deg); }
+  50% { transform: rotate(5deg); }
+}
+
+@keyframes weee-wobble-mild-left {
+  0%, 100% { transform: scale(-1, 1) rotate(-5deg); }
+  50% { transform: scale(-1, 1) rotate(5deg); }
 }
 
 /* tontura rápida só no instante de bater na "parede" — sobrepõe o weee

@@ -61,7 +61,9 @@ o texto do verbo — dá pra ver o estado atual de cara, sem precisar ler.
 sem reaplicar animação num elemento irmão): `settings.sunglasses`
 (persistido), alternado pelo botão só-ícone (🕶️, estilo `.lang-btn`
 reaproveitado) no menu, ação `toggle-sunglasses`. Desligado durante o
-modo lua/eclipse (não faz sentido nesse estado).
+modo lua/eclipse (não faz sentido nesse estado). Formato Wayfarer
+(lentes trapezoidais, mais largas em cima, com ponte e hastes grossas) —
+o "estilo Ray-Ban" clássico, pedido explicitamente.
 
 ### Modo respiração: transformação sol/lua
 
@@ -244,23 +246,37 @@ com quantos monitores a pessoa tiver, em qualquer escala e arranjo.
   o atrito fraco de sempre levava muito tempo pra chegar perto de zero, e
   o corte em `FLING_STOP_SPEED` acontecia com o sol ainda visivelmente em
   movimento — um "easy out" suave em ~0,5s em vez de um travão seco.
-  Tanto sendo arrastado (depois de já ter se movido) quanto voando livre,
-  `#sun-wrap.weee` troca a cara pra uma de "weeeee" (😆, só troca o texto
-  do `#sun` — não tem partes separadas de rosto pra animar), balança/gira
-  o corpo animado (`weee-wobble`, no lugar da respiração parada do idle —
-  sem isso ele "flutuava" pela tela sem animação nenhuma de corpo) e o
-  `#glow` (mesmo brilho de outros estados) liga com um pulso bem sutil
-  (encolhe um pouco e volta) e os raios girando bem mais devagar que em
-  qualquer outro estado (26s). No instante exato de bater numa borda,
+  Sendo arrastado (depois de já ter se movido) é sempre a empolgação
+  máxima; voando livre depois do arremesso, a empolgação tem graus
+  conforme a velocidade atual (`main.js` manda `fling-speed` a cada tick
+  do `flingTick()`, não só no início): acima de `FLING_WILD_SPEED` (260
+  px/s) é `#sun-wrap.weee` — cara de "weeeee" (😆) e balanço rápido
+  (`weee-wobble`); abaixo disso (mas ainda em movimento) é
+  `#sun-wrap.weee-mild` — mesma cara normal, só um balanço bem mais
+  discreto e devagar (`weee-wobble-mild`); abaixo de `FLING_CALM_SPEED`
+  (40 px/s, "quase parando") nenhuma das duas classes liga mais — a
+  animação de idle/caminhada por baixo (nunca desligada) volta a aparecer
+  sozinha, então a transição pro estado normal já acontece antes do
+  arremesso terminar de verdade, não só no instante exato em que ele para.
+  Em qualquer um dos dois graus de empolgação, o `#glow` (mesmo brilho de
+  outros estados) liga com um pulso bem sutil (encolhe um pouco e volta) e
+  os raios giram bem mais devagar que em qualquer outro estado (26s no
+  "weee", 40s no "weee-mild"). No instante exato de bater numa borda,
   `#sun-wrap.dizzy` sobrepõe brevemente uma cara de tonto (😵) e um balanço
   mais brusco (`fling-wobble`, reaproveitado do design anterior) por cima
-  do `weee` — dura o mesmo tanto que o squash do impacto
+  do que estava tocando — dura o mesmo tanto que o squash do impacto
   (`animationend` de `wall-squash-x/y` desliga o `dizzy`) e depois volta
-  sozinho pro `weee`, já que o voo continua. `updateMotionVisual()` (em
-  `renderer.js`) centraliza essa troca de cara/classe a partir de três
-  booleans (`isDragging`, `flingActive`, `impactActive`), pra nunca ter os
-  dois estados ligados ao mesmo tempo. Ao parar sozinho de vez, volta pra
-  cara normal na hora, sem transição — não precisa disso, só desliga.
+  sozinho pro grau de empolgação correspondente à velocidade atual, já que
+  o voo continua. `updateMotionVisual()` (em `renderer.js`) centraliza essa
+  troca de cara/classe a partir de `isDragging`, `flingActive`,
+  `flingSpeed` e `impactActive`, sempre mutuamente exclusivos entre si.
+
+  Bug corrigido: a troca de cara usava `sunEl.textContent = ...`, que
+  **apaga todos os filhos** do `#sun` — inofensivo enquanto ele só tinha
+  texto, mas destruía os `#mouth`/`#sunglasses` (adicionados depois) toda
+  vez que a cara mudava (todo tick de arremesso!). Resolvido movendo o
+  emoji do rosto pra um `<span id="face">` próprio, filho de `#sun` junto
+  com os outros — só o `.textContent` desse span é trocado agora.
 - **Monitor conectado/desconectado ou mudança de resolução/escala** com o
   app aberto: `keepSunOnScreen()` traz o sol de volta pro monitor mais
   próximo.

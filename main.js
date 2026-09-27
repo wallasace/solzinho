@@ -904,7 +904,10 @@ function startFlingIfFast(v) {
   if (Math.hypot(v.x, v.y) < FLING_MIN_SPEED) return;
   flingVel = { ...v };
   pauseWalk('fling');
-  if (win && !win.isDestroyed()) win.webContents.send('flinging', true);
+  if (win && !win.isDestroyed()) {
+    win.webContents.send('flinging', true);
+    win.webContents.send('fling-speed', Math.hypot(v.x, v.y));
+  }
   if (flingTimer) clearInterval(flingTimer);
   flingTimer = setInterval(flingTick, 16);
 }
@@ -941,7 +944,9 @@ function flingTick() {
   if (Math.abs(flingVel.x) > 5) win.webContents.send('face-direction', flingVel.x < 0 ? -1 : 1);
   repositionFollowerWindows();
 
-  if (Math.hypot(flingVel.x, flingVel.y) < FLING_STOP_SPEED) stopFling();
+  const currentSpeed = Math.hypot(flingVel.x, flingVel.y);
+  win.webContents.send('fling-speed', currentSpeed);
+  if (currentSpeed < FLING_STOP_SPEED) stopFling();
 }
 
 function stopFling() {

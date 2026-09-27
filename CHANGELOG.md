@@ -223,4 +223,17 @@ funcionalidade, não releases.
   e ao dar uma dica.
 - Boca de fala aumentada e com mais contraste — a versão anterior era
   pequena/clara demais e quase não dava pra perceber no tamanho real.
-- Novo item de menu (só ícone, 🕶️): coloca/tira óculos escuros no sol.
+- Novo item de menu (só ícone, 🕶️): coloca/tira óculos escuros no sol,
+  no formato Wayfarer clássico ("estilo Ray-Ban").
+- Corrigido bug real: trocar a cara do sol (`sunEl.textContent = ...`)
+  apagava os filhos do `#sun` — a boca e os óculos desapareciam de vez
+  toda vez que o arremesso mudava a cara dele. O rosto agora vive num
+  `<span>` próprio, sem mexer nos irmãos.
+- Arremesso ganhou graus de empolgação conforme a velocidade atual (não
+  só uma cara de "weeeee" fixa o tempo todo): rápido é a cara e o balanço
+  cheios; mais devagar é um balanço bem mais discreto, cara normal; perto
+  de já ter parado, a animação de idle/caminhada volta sozinha antes
+  mesmo do arremesso terminar de vez.
+- Respiração da lua com um pouco de squash-and-stretch (infla e sobe de
+  leve no "inspira", esvazia abaixo do normal e desce no "solta") em vez
+  de só um pulso uniforme de escala.
