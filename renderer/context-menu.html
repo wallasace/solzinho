@@ -71,6 +71,32 @@
       background: #f0a93a;
       border-color: #f0a93a;
     }
+    /* indicador de liga/desliga nas opções de estado persistente (dicas,
+       caminhada, sons, iniciar com o Windows) — mostra o estado atual de
+       cara, sem depender só de ler o verbo do texto */
+    .toggle-dot {
+      width: 15px;
+      height: 15px;
+      border-radius: 5px;
+      border: 1.5px solid rgba(154, 122, 58, 0.5);
+      flex-shrink: 0;
+      position: relative;
+    }
+    .toggle-dot.on {
+      background: #f0a93a;
+      border-color: #f0a93a;
+    }
+    .toggle-dot.on::after {
+      content: "";
+      position: absolute;
+      left: 3px;
+      top: 0px;
+      width: 4px;
+      height: 8px;
+      border: solid #fffdf6;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
     .lang-row {
       display: flex;
       gap: 8px;

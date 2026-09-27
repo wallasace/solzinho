@@ -44,13 +44,13 @@ html, body {
 }
 
 /* durante o eclipse (moon-mode/breathing/moon-exit) o mesmo brilho vira a
-   coroa solar ao redor do disco escuro da lua; durante o arremesso
-   (flinging) é o próprio brilho do sol reagindo ao "susto" de ser jogado */
+   coroa solar ao redor do disco escuro da lua; sendo arrastado ou voando
+   livre (weee) é o próprio brilho do sol reagindo à emoção do momento */
 #sun-wrap.shining #glow,
 #sun-wrap.moon-mode #glow,
 #sun-wrap.breathing #glow,
 #sun-wrap.moon-exit #glow,
-#sun-wrap.flinging #glow {
+#sun-wrap.weee #glow {
   opacity: 1;
 }
 
@@ -74,8 +74,9 @@ html, body {
   animation: ray-spin 6s linear infinite;
 }
 
-/* arremesso: gira bem devagar, bem mais devagar que qualquer outro estado */
-#sun-wrap.flinging #rays {
+/* sendo arrastado ou voando livre: gira bem devagar, bem mais devagar que
+   qualquer outro estado */
+#sun-wrap.weee #rays {
   animation: ray-spin 26s linear infinite;
 }
 
@@ -100,7 +101,7 @@ html, body {
 }
 
 /* diminui um pouco e volta — bem mais sutil que o glow-pulse normal */
-#sun-wrap.flinging #glow-circle {
+#sun-wrap.weee #glow-circle {
   animation: fling-glow-pulse 1.6s ease-in-out infinite;
 }
 
@@ -184,28 +185,47 @@ html, body {
   65% { transform: scale(0.95, 1.06); }
 }
 
+/* boca sobreposta ao rosto do emoji, na posição aproximada da boca do
+   🌞 (Segoe UI Emoji); só aparece enquanto ele está "falando" (mostrando
+   uma dica), abrindo e fechando rápido — reflete a fala, não some no
+   resto do tempo (opacity:0 esconde ela, o sorriso do emoji fica por baixo) */
+#mouth {
+  position: absolute;
+  top: 59%;
+  left: 50%;
+  width: 17px;
+  height: 8px;
+  background: #7a3b1e;
+  border-radius: 50%;
+  opacity: 0;
+  transform: translate(-50%, -50%) scaleY(0.25);
+  pointer-events: none;
+}
+
+#sun-wrap.shining #mouth {
+  animation: mouth-talk 0.3s ease-in-out infinite;
+}
+
+@keyframes mouth-talk {
+  0%, 100% { opacity: 0; transform: translate(-50%, -50%) scaleY(0.25); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scaleY(2); }
+}
+
 @keyframes talk-left {
   0%, 100% { transform: scale(-1, 1); }
   30% { transform: scale(-1.05, 0.9); }
   65% { transform: scale(-0.95, 1.06); }
 }
 
-/* Exercício de respiração: eclipse. A lua sai de trás do sol (z-index
-   abaixo, centrada nele — só aparece a lasca que não fica atrás do disco
-   do sol), passa pra frente (z-index acima) e dá uma volta completa de
-   360° orbitando o sol; ao fechar a volta, encolhe de volta pro centro e
-   cobre o sol exatamente = eclipse total. O sol fica visível o tempo
-   todo (é a lua na frente, opaca, que cobre a parte que se sobrepõe —
-   por isso dá pra ver a "lasca" de sol não coberta durante a volta) e só
-   fica com opacity:0 (por garantia) no instante final, quando a lua já
-   cobre ele por completo. Nesse instante a lua escurece um pouco
-   (`#sun-wrap.breathing #moon`), simulando a sombra do eclipse total. Pra
-   sair, é a mesma órbita de trás pra frente (`animation-direction:
-   reverse` nas mesmas @keyframes). */
+/* Exercício de respiração: transformação simples. A lua surge pequena no
+   centro (crescendo até o tamanho normal, com um bounce no final) enquanto
+   o sol vai encolhendo e sumindo ao mesmo tempo, no mesmo lugar. Pra
+   voltar, é o mesmo movimento com os papéis trocados: o sol surge pequeno
+   e cresce com o bounce, enquanto a lua encolhe e some. */
 #moon-wrap {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -226,11 +246,11 @@ html, body {
 }
 
 #sun-wrap.moon-mode #sun {
-  animation: eclipse-sun 1.8s ease-in-out forwards;
+  animation: shrink-out 1.8s ease-in-out forwards;
 }
 
 #sun-wrap.moon-mode #moon-wrap {
-  animation: eclipse-orbit 1.8s ease-in-out forwards;
+  animation: grow-in-bounce 1.8s ease-in-out forwards;
   pointer-events: auto;
   cursor: grab;
 }
@@ -240,40 +260,26 @@ html, body {
 }
 
 #sun-wrap.moon-exit #sun {
-  animation: eclipse-sun 1.8s ease-in-out reverse forwards;
+  animation: grow-in-bounce 1.8s ease-in-out forwards;
 }
 
 #sun-wrap.moon-exit #moon-wrap {
-  animation: eclipse-orbit 1.8s ease-in-out reverse forwards;
+  animation: shrink-out 1.8s ease-in-out forwards;
 }
 
-/* trajeto da lua: 0%-18% emerge de trás do sol (z-index 0, mesmo centro,
-   deslizando até a borda direita — só a lasca fora do disco do sol
-   aparece); 18%-85% dá a volta completa de 360° na frente do sol
-   (z-index 2), num raio que sobrepõe boa parte do disco (efeito de
-   eclipse parcial girando); 85%-100% fecha a volta encolhendo o raio de
-   volta ao centro = eclipse total. */
-@keyframes eclipse-orbit {
-  0%   { opacity: 0;    transform: translate(0, 0)      scale(0.25); z-index: 0; }
-  10%  { opacity: 0.85; transform: translate(30px, 0)   scale(0.55); z-index: 0; }
-  18%  { opacity: 1;    transform: translate(38px, 0)   scale(0.65); z-index: 0; }
-  20%  { opacity: 1;    transform: translate(38px, 0)   scale(0.65); z-index: 2; }
-  28%  { opacity: 1;    transform: translate(27px, 27px) scale(0.65); z-index: 2; }
-  36%  { opacity: 1;    transform: translate(0, 38px)    scale(0.65); z-index: 2; }
-  44%  { opacity: 1;    transform: translate(-27px, 27px) scale(0.65); z-index: 2; }
-  53%  { opacity: 1;    transform: translate(-38px, 0)   scale(0.65); z-index: 2; }
-  61%  { opacity: 1;    transform: translate(-27px, -27px) scale(0.65); z-index: 2; }
-  69%  { opacity: 1;    transform: translate(0, -38px)   scale(0.65); z-index: 2; }
-  77%  { opacity: 1;    transform: translate(27px, -27px) scale(0.65); z-index: 2; }
-  85%  { opacity: 1;    transform: translate(38px, 0)    scale(0.65); z-index: 2; }
-  100% { opacity: 1;    transform: translate(0, 0)       scale(1);    z-index: 2; }
+/* encolhe e some no mesmo lugar (usado por quem está desaparecendo) */
+@keyframes shrink-out {
+  0%   { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.15); }
 }
 
-/* o sol fica visível o tempo todo (a lua opaca cobre por cima o que se
-   sobrepõe); some de vez só no instante final, quando já está 100% coberto */
-@keyframes eclipse-sun {
-  0%, 97% { opacity: 1; }
-  100% { opacity: 0; }
+/* surge pequeno, cresce passando um pouco do tamanho normal e assenta com
+   um bounce (usado por quem está aparecendo) */
+@keyframes grow-in-bounce {
+  0%   { opacity: 0;    transform: scale(0.15); }
+  65%  { opacity: 1;    transform: scale(1.15); }
+  82%  { opacity: 1;    transform: scale(0.94); }
+  100% { opacity: 1;    transform: scale(1); }
 }
 
 @keyframes breath-cycle {
@@ -327,14 +333,35 @@ html, body {
   100% { transform: translateX(-50%) scale(1, 1); }
 }
 
-/* enquanto ele voa pelo ar (arremesso): balança/gira em vez de ficar parado
-   ou só com a respiração calma do idle. Vem depois de walking/idle/talk no
-   arquivo de propósito, pra ganhar deles na empate de especificidade. */
-#sun-wrap.flinging #sun {
+/* sendo arrastado ou voando livre depois do arremesso: balança animado,
+   cara de "weeeee", em vez de ficar parado ou só com a respiração calma do
+   idle. Vem depois de walking/idle/talk no arquivo de propósito, pra
+   ganhar deles na empate de especificidade. */
+#sun-wrap.weee #sun {
+  animation: weee-wobble 0.35s ease-in-out infinite;
+}
+
+#sun-wrap.weee.facing-left #sun {
+  animation: weee-wobble-left 0.35s ease-in-out infinite;
+}
+
+@keyframes weee-wobble {
+  0%, 100% { transform: rotate(-16deg) scale(1.02, 0.96); }
+  50% { transform: rotate(16deg) scale(0.96, 1.04); }
+}
+
+@keyframes weee-wobble-left {
+  0%, 100% { transform: scale(-1, 1) rotate(-16deg) scale(1.02, 0.96); }
+  50% { transform: scale(-1, 1) rotate(16deg) scale(0.96, 1.04); }
+}
+
+/* tontura rápida só no instante de bater na "parede" — sobrepõe o weee
+   por 0,4s (a duração do wall-squash) e volta sozinho pra ele depois */
+#sun-wrap.dizzy #sun {
   animation: fling-wobble 0.4s ease-in-out infinite;
 }
 
-#sun-wrap.flinging.facing-left #sun {
+#sun-wrap.dizzy.facing-left #sun {
   animation: fling-wobble-left 0.4s ease-in-out infinite;
 }
 

@@ -182,3 +182,24 @@ funcionalidade, não releases.
 - Todos os 4 sons do app (dica, batida, transformação, menu) unificados
   no mesmo "ar" cozy — mesma receita de filtro passa-baixa + onda
   triangular quentinha, em vez de cada um soar diferente.
+
+## Boca, indicadores de menu e ajustes de arremesso/respiração
+
+- O sol agora "mexe a boca" (um óvalo pequeno sobreposto ao rosto do
+  emoji, abrindo e fechando rápido) enquanto está mostrando uma dica.
+- As opções de estado persistente no menu (pausar dicas, caminhada, sons,
+  iniciar com o Windows) ganharam um indicador visual de ligado/desligado,
+  em vez de só trocar o texto do verbo.
+- Sendo arrastado ou voando livre depois do arremesso, o sol agora tem uma
+  cara de "weeeee" (antes só ficava com a cara de tonto durante o
+  arremesso, e nada de especial durante o arraste). A cara de tonto virou
+  uma reação rápida só no instante de bater numa borda, voltando sozinha
+  pro "weeeee" logo em seguida.
+- Simplificada a transformação sol/lua do exercício de respiração: em vez
+  da lua orbitando o sol, agora é só a lua surgindo pequena e crescendo
+  com um bounce no final (e o sol encolhendo/sumindo ao mesmo tempo) —
+  e o mesmo movimento ao contrário na volta.
+- Ao terminar o exercício (por clique ou pelo tempo acabar), o balão
+  convida a repetir ("toque para respirar de novo", em destaque); tocando
+  nele, a contagem regressiva começa de novo. Se ninguém tocar, volta ao
+  normal sozinho depois de alguns segundos.

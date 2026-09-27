@@ -1,7 +1,8 @@
 const sunWrap = document.getElementById('sun-wrap');
 const sunEl = document.getElementById('sun');
 const SUN_FACE_NORMAL = '🌞';
-const SUN_FACE_FLYING = '😵'; // expressão de tontura enquanto é arremessado
+const SUN_FACE_WEEE = '😆'; // "weeeee" — sendo arrastado ou voando livre depois do arremesso
+const SUN_FACE_DIZZY = '😵'; // tontura só no instante do impacto contra a "parede"
 
 // O balão e o painel de respiração ficam numa janela própria (speech.html),
 // controlada pelo main; daqui só se manda o texto.
@@ -197,9 +198,13 @@ function beginBreathingCycle(cycleMs) {
 }
 
 let moonExitTimer = null;
+let breathingPromptActive = false;
+let breathingPromptTimer = null;
+const BREATHING_PROMPT_MS = 7000;
 
 function startBreathing({ cycleMs, countdownMs }) {
   hideBubble(); // se tinha uma dica na tela, o exercício toma o lugar dela
+  hideBreathingPrompt(); // um novo ciclo cancela o convite de repetir, se estava na tela
   breathingInProgress = true;
   if (breathPhaseTimer) clearInterval(breathPhaseTimer);
   if (breathCountdownTimer) clearInterval(breathCountdownTimer);
@@ -241,9 +246,38 @@ function endBreathing() {
   window.solzinho.speechHide();
 }
 
-// clique no balão: fecha a dica, ou encerra o exercício de respiração
+// convite pra repetir o exercício, mostrado no balão assim que o sol termina
+// de voltar; some sozinho depois de um tempo se ninguém tocar nele
+function hideBreathingPrompt() {
+  if (!breathingPromptActive) return;
+  breathingPromptActive = false;
+  if (breathingPromptTimer) clearTimeout(breathingPromptTimer);
+  breathingPromptTimer = null;
+  window.solzinho.speechHide();
+}
+
+function dismissBreathingPrompt() {
+  if (!breathingPromptActive) return;
+  hideBreathingPrompt();
+  window.solzinho.breathingPromptDismissed();
+}
+
+function showBreathingPrompt() {
+  const T = I18N[currentLanguage];
+  breathingPromptActive = true;
+  window.solzinho.speechShow({ kind: 'breath-done', text: T.breathingDoneText, hint: T.breathingAgainHint });
+  breathingPromptTimer = setTimeout(dismissBreathingPrompt, BREATHING_PROMPT_MS);
+}
+
+window.solzinho.onBreathingDonePrompt(showBreathingPrompt);
+
+// clique no balão: fecha a dica, aceita o convite de repetir a respiração,
+// ou encerra o exercício de respiração que está rolando
 window.solzinho.onSpeechClicked(() => {
-  if (breathingInProgress) {
+  if (breathingPromptActive) {
+    hideBreathingPrompt();
+    window.solzinho.breathingAgainRequest();
+  } else if (breathingInProgress) {
     playMoonToSunChime();
     window.solzinho.stopBreathing();
   } else {
@@ -254,7 +288,20 @@ window.solzinho.onSpeechClicked(() => {
 let isDragging = false;
 let dragMoved = false;
 let dragStart = null;
+let flingActive = false;
+let impactActive = false;
 const DRAG_THRESHOLD = 4;
+
+// Estado de movimento do sol: "weee" enquanto está sendo arrastado (depois
+// de já ter se movido) ou voando livre após o arremesso; "dizzy" só no
+// instante de bater na "parede" (some sozinho quando o squash termina);
+// fora disso, cara e corpo normais.
+function updateMotionVisual() {
+  const moving = isDragging || flingActive;
+  sunWrap.classList.toggle('dizzy', impactActive);
+  sunWrap.classList.toggle('weee', moving && !impactActive);
+  sunEl.textContent = impactActive ? SUN_FACE_DIZZY : moving ? SUN_FACE_WEEE : SUN_FACE_NORMAL;
+}
 
 function playClickBounce() {
   sunWrap.classList.remove('clicked');
@@ -289,6 +336,7 @@ function endDrag() {
   if (!isDragging) return;
   isDragging = false;
   window.solzinho.dragEnd();
+  updateMotionVisual();
 }
 
 window.addEventListener('mousemove', (event) => {
@@ -301,7 +349,10 @@ window.addEventListener('mousemove', (event) => {
   }
   const dx = event.screenX - dragStart.screenX;
   const dy = event.screenY - dragStart.screenY;
-  if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) dragMoved = true;
+  if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
+    if (!dragMoved) updateMotionVisual();
+    dragMoved = true;
+  }
 });
 
 window.addEventListener('mouseup', endDrag);
@@ -316,22 +367,27 @@ function playWallBounce({ axis, speed }) {
   sunWrap.classList.remove('wall-bounce-x', 'wall-bounce-y');
   void sunWrap.offsetWidth; // reinicia a animação em batidas seguidas
   sunWrap.classList.add(axis === 'y' ? 'wall-bounce-y' : 'wall-bounce-x');
+  impactActive = true;
+  updateMotionVisual();
   playBounceThud(speed);
 }
 
 sunWrap.addEventListener('animationend', (event) => {
   if (event.animationName === 'wall-squash-x' || event.animationName === 'wall-squash-y') {
     sunWrap.classList.remove('wall-bounce-x', 'wall-bounce-y');
+    impactActive = false;
+    updateMotionVisual();
   }
 });
 
-// Enquanto o arremesso (física de arrastar-e-soltar) está rolando: cara de
-// tonto no lugar do sorriso, e o brilho (mesmo #glow de outros estados)
-// encolhe um pouco e volta, girando bem devagar. Ao parar, sem transição
-// especial de volta — só desliga (o "pode manter como está" do pedido).
+// Enquanto está sendo arrastado ou voando livre depois do arremesso: cara
+// de "weeeee" e o brilho (mesmo #glow de outros estados) encolhe um pouco
+// e volta, girando bem devagar. Ao bater na "parede", uma tontura rápida
+// (ver playWallBounce); ao parar de vez, volta ao normal sem transição
+// especial (o "pode manter como está" do pedido original).
 function setFlinging(active) {
-  sunWrap.classList.toggle('flinging', active);
-  sunEl.textContent = active ? SUN_FACE_FLYING : SUN_FACE_NORMAL;
+  flingActive = active;
+  updateMotionVisual();
 }
 
 window.solzinho.onInit((settings) => {

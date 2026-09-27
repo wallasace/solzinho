@@ -5,13 +5,25 @@ function el(tag, className, text) {
   return node;
 }
 
+function toggleItem(label, active, onClick) {
+  const item = el('div', 'item');
+  const dot = el('div', 'toggle-dot' + (active ? ' on' : ''));
+  item.appendChild(dot);
+  item.appendChild(el('span', null, label));
+  item.addEventListener('click', onClick);
+  return item;
+}
+
 function render(state) {
   const T = I18N[state.language] || I18N.pt;
   const menu = document.getElementById('menu');
   menu.innerHTML = '';
 
-  const toggleTips = el('div', 'item', state.tipsPaused ? T.resumeTips : T.pauseTips);
-  toggleTips.addEventListener('click', () => window.menuApi.action('toggle-tips'));
+  const toggleTips = toggleItem(
+    state.tipsPaused ? T.resumeTips : T.pauseTips,
+    !state.tipsPaused,
+    () => window.menuApi.action('toggle-tips')
+  );
   menu.appendChild(toggleTips);
 
   menu.appendChild(el('div', 'divider'));
@@ -36,8 +48,11 @@ function render(state) {
 
   menu.appendChild(el('div', 'divider'));
 
-  const toggleWalk = el('div', 'item', state.walking ? T.stopWalking : T.resumeWalking);
-  toggleWalk.addEventListener('click', () => window.menuApi.action('toggle-walking'));
+  const toggleWalk = toggleItem(
+    state.walking ? T.stopWalking : T.resumeWalking,
+    state.walking,
+    () => window.menuApi.action('toggle-walking')
+  );
   menu.appendChild(toggleWalk);
 
   const tipNow = el('div', 'item', T.tipNow);
@@ -48,12 +63,18 @@ function render(state) {
   breathing.addEventListener('click', () => window.menuApi.action('breathing-exercise'));
   menu.appendChild(breathing);
 
-  const toggleMute = el('div', 'item', state.muted ? T.unmuteSounds : T.muteSounds);
-  toggleMute.addEventListener('click', () => window.menuApi.action('toggle-mute'));
+  const toggleMute = toggleItem(
+    state.muted ? T.unmuteSounds : T.muteSounds,
+    !state.muted,
+    () => window.menuApi.action('toggle-mute')
+  );
   menu.appendChild(toggleMute);
 
-  const toggleAutoLaunch = el('div', 'item', state.autoLaunch ? T.disableAutoLaunch : T.enableAutoLaunch);
-  toggleAutoLaunch.addEventListener('click', () => window.menuApi.action('toggle-auto-launch'));
+  const toggleAutoLaunch = toggleItem(
+    state.autoLaunch ? T.disableAutoLaunch : T.enableAutoLaunch,
+    state.autoLaunch,
+    () => window.menuApi.action('toggle-auto-launch')
+  );
   menu.appendChild(toggleAutoLaunch);
 
   menu.appendChild(el('div', 'divider'));

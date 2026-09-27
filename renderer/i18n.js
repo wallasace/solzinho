@@ -37,6 +37,8 @@ const I18N = {
     getReady: (seconds) => `Prepare-se… ${seconds}`,
     breathHint: 'toque para parar',
     phases: ['Inspire', 'Segure', 'Solte', 'Segure'],
+    breathingDoneText: 'Como você está? 🌬️',
+    breathingAgainHint: 'toque para respirar de novo',
   },
   en: {
     pauseTips: 'Pause tips',
@@ -74,5 +76,7 @@ const I18N = {
     getReady: (seconds) => `Get ready… ${seconds}`,
     breathHint: 'tap to stop',
     phases: ['Inhale', 'Hold', 'Exhale', 'Hold'],
+    breathingDoneText: 'How are you feeling? 🌬️',
+    breathingAgainHint: 'tap to breathe again',
   },
 };

@@ -29,34 +29,53 @@ em volta do sol (`computeSpeechPlacement`): acima dele; abaixo, se não há
 espaço em cima; deslocado pro lado quando o sol está na borda, com a
 "pontinha" sempre apontando pro sol. O sol nunca se move pra abrir espaço.
 
-### Modo respiração: eclipse
+Enquanto o balão de dica está na tela (`shining`), um `#mouth` — um óvalo
+pequeno, filho de `#sun`, posicionado por cima da boca do emoji 🌞 — abre
+e fecha rápido (`mouth-talk`) simulando fala; fica com `opacity:0` no
+resto do tempo, deixando o sorriso normal do emoji por baixo.
 
-Classes no `#sun-wrap`: `moon-mode` (0%-18%: a lua 🌚 emerge de trás do sol,
-mesmo centro dele, deslizando até a borda direita — `z-index:0`, só a
-lasca que não fica atrás do disco do sol aparece; 18%-85%: passa pra
-`z-index:2` e dá uma volta completa de 360° orbitando o sol num raio fixo,
-sem cobri-lo — é a lua "passeando na frente"; 85%-100%: fecha a volta
-encolhendo o raio de volta ao centro = eclipse total), `breathing` (a lua,
-já em eclipse total, infla/esvazia em ciclos de 16s) e `moon-exit` (a
-mesma órbita de trás pra frente, usando `animation-direction: reverse` na
-mesma `@keyframes eclipse-orbit` — não há uma segunda animação escrita pra
-volta). O sol (`@keyframes eclipse-sun`) fica com opacidade cheia o tempo
-todo — a "lasca" e a volta orbitando já não o cobrem, é só na sobreposição
-final (~97%-100%) que ele é escondido — e nesse instante a lua escurece
-um pouco (`filter: brightness(0.8)` em `#sun-wrap.breathing #moon`),
-simulando a sombra do eclipse total.
+No menu (`context-menu.js`), as opções de estado persistente (dicas,
+caminhada, sons, iniciar com o Windows) usam um indicador quadrado
+(`.toggle-dot`, preenchido e com "check" quando ativo) em vez de só trocar
+o texto do verbo — dá pra ver o estado atual de cara, sem precisar ler.
 
-O `#glow` (mesmo brilho de "dando uma dica") também liga durante o
-eclipse, mas vira uma coroa bem mais colada na silhueta da lua: menor
-(76px em vez de 100px) e **sem os raios girando** (`#rays { opacity: 0 }`
-nesses estados) — só o anel de brilho (`#glow-circle`) pulsando. Os
-cliques são ouvidos no `#sun-wrap`, não no `#sun`, pra funcionarem também
-sobre a lua.
+### Modo respiração: transformação sol/lua
+
+Classes no `#sun-wrap`: `moon-mode` (a lua 🌚 surge pequena no centro e
+cresce até o tamanho normal com um bounce no final — `@keyframes
+grow-in-bounce` — enquanto o sol encolhe e some no mesmo lugar
+— `@keyframes shrink-out`), `breathing` (a lua, já assentada, infla/esvazia
+em ciclos de 16s) e `moon-exit` (o mesmo movimento com os papéis
+trocados: o sol surge pequeno e cresce com o bounce — `grow-in-bounce` —
+enquanto a lua encolhe e some — `shrink-out`). Sem órbita nem rotação: é
+só um crossfade com scale, então as duas `@keyframes` servem pra qualquer
+um dos dois lados da transição, só trocando qual elemento recebe qual.
+Nesse instante a lua escurece um pouco (`filter: brightness(0.8)` em
+`#sun-wrap.breathing #moon`), simulando a sombra do eclipse.
+
+O `#glow` (mesmo brilho de "dando uma dica") também liga durante a
+transformação, mas vira uma coroa bem mais colada na silhueta da lua:
+menor (76px em vez de 100px) e **sem os raios girando** (`#rays {
+opacity: 0 }` nesses estados) — só o anel de brilho (`#glow-circle`)
+pulsando. Os cliques são ouvidos no `#sun-wrap`, não no `#sun`, pra
+funcionarem também sobre a lua.
 
 Bug corrigido: o `<svg>` do `#glow` corta o próprio desenho na borda do seu
 `viewBox` por padrão (comportamento do navegador); o pulso do círculo de
 brilho (`glow-pulse`) passa um pouco dela no pico da escala, cortando uma
 fatia do brilho — corrigido com `overflow: visible` no `#glow`.
+
+Ao terminar (por clique ou pelo tempo acabar), em vez de retomar a
+caminhada na hora, o main manda `breathing-done-prompt` e o renderer
+mostra um convite no balão ("Como você está? / toque para respirar de
+novo", com o texto do convite em destaque — `.speech-card.cta #hint`,
+diferente do texto discreto de "toque para parar" do exercício em si).
+Tocando nele (`breathing-again-request`), o exercício recomeça do zero
+(nova contagem regressiva); se ninguém tocar em `BREATHING_PROMPT_MS`
+(7s), o renderer mesmo manda `breathing-prompt-dismissed` e só aí o main
+retoma a caminhada e mostra a dica pendente, se houver. `requestTipNow()`
+(pedir uma dica agora, inclusive durante o exercício) pula esse convite
+de propósito — a intenção ali é ver a dica, não repetir a respiração.
 
 Todas usam `transparent: true`, `frame: false`, `alwaysOnTop: true` (nível
 `screen-saver`, o mais alto do Electron) e `skipTaskbar: true`. A janela do
@@ -106,13 +125,13 @@ terminar (`showPendingTipIfAny()`, chamado nos handlers de fechamento de
 cada popup e no fim do exercício de respiração).
 
 Pedir uma dica pelo menu ("Me dá uma dica agora") enquanto está no modo
-respiração não espera o exercício acabar sozinho: `requestTipNow()`
-encerra ele na hora (mesma animação de sempre, a lua virando sol) e a
-dica só aparece depois que a transição termina — `endBreathingExercise()`
-segura `showPendingTipIfAny()` atrás de um `setTimeout`
-(`BREATHING_EXIT_ANIM_MS`, igual à duração do `eclipse-orbit` reverso em
-`renderer/style.css`), pra não cortar a animação mostrando o balão em
-cima dela.
+respiração não espera o exercício acabar sozinho: `requestTipNow()` chama
+`endBreathingExercise(false)` — o `false` pula o convite de repetir (ver
+acima) — e a dica só aparece depois que a transição termina
+(`endBreathingExercise` segura o próximo passo atrás de um `setTimeout` de
+`BREATHING_EXIT_ANIM_MS`, igual à duração do `grow-in-bounce`/`shrink-out`
+em `renderer/style.css`, pra não cortar a animação mostrando o balão em
+cima dela).
 
 ### Dois ciclos de dica independentes
 
@@ -191,14 +210,23 @@ com quantos monitores a pessoa tiver, em qualquer escala e arranjo.
   o atrito fraco de sempre levava muito tempo pra chegar perto de zero, e
   o corte em `FLING_STOP_SPEED` acontecia com o sol ainda visivelmente em
   movimento — um "easy out" suave em ~0,5s em vez de um travão seco.
-  Enquanto dura, `#sun-wrap.flinging` troca a cara pra uma de tonto (😵,
-  só troca o texto do `#sun` — não tem partes separadas de rosto pra
-  animar), balança/gira o corpo (`fling-wobble`, no lugar da respiração
-  parada do idle — sem isso ele "flutuava" pela tela sem animação nenhuma
-  de corpo) e o `#glow` (mesmo brilho de outros estados) liga com um pulso
-  bem sutil (encolhe um pouco e volta) e os raios girando bem mais devagar
-  que em qualquer outro estado (26s). Ao parar sozinho, volta pra cara
-  normal na hora, sem transição — não precisa disso, só desliga.
+  Tanto sendo arrastado (depois de já ter se movido) quanto voando livre,
+  `#sun-wrap.weee` troca a cara pra uma de "weeeee" (😆, só troca o texto
+  do `#sun` — não tem partes separadas de rosto pra animar), balança/gira
+  o corpo animado (`weee-wobble`, no lugar da respiração parada do idle —
+  sem isso ele "flutuava" pela tela sem animação nenhuma de corpo) e o
+  `#glow` (mesmo brilho de outros estados) liga com um pulso bem sutil
+  (encolhe um pouco e volta) e os raios girando bem mais devagar que em
+  qualquer outro estado (26s). No instante exato de bater numa borda,
+  `#sun-wrap.dizzy` sobrepõe brevemente uma cara de tonto (😵) e um balanço
+  mais brusco (`fling-wobble`, reaproveitado do design anterior) por cima
+  do `weee` — dura o mesmo tanto que o squash do impacto
+  (`animationend` de `wall-squash-x/y` desliga o `dizzy`) e depois volta
+  sozinho pro `weee`, já que o voo continua. `updateMotionVisual()` (em
+  `renderer.js`) centraliza essa troca de cara/classe a partir de três
+  booleans (`isDragging`, `flingActive`, `impactActive`), pra nunca ter os
+  dois estados ligados ao mesmo tempo. Ao parar sozinho de vez, volta pra
+  cara normal na hora, sem transição — não precisa disso, só desliga.
 - **Monitor conectado/desconectado ou mudança de resolução/escala** com o
   app aberto: `keepSunOnScreen()` traz o sol de volta pro monitor mais
   próximo.

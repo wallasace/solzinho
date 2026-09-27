@@ -48,7 +48,7 @@ let breathingTimeout = null;
 const BREATHING_CYCLE_MS = 16000; // inspira 4s + segura 4s + solta 4s + segura 4s
 const BREATHING_CYCLES = 4;
 const BREATHING_COUNTDOWN_MS = 3000;
-const BREATHING_EXIT_ANIM_MS = 1800; // duração do eclipse-orbit reverso (renderer/style.css)
+const BREATHING_EXIT_ANIM_MS = 1800; // duração da transformação lua->sol (renderer/style.css)
 
 const MENU_W = 260;
 const MENU_H = 555;
@@ -476,19 +476,33 @@ function startBreathingExercise() {
   breathingTimeout = setTimeout(endBreathingExercise, BREATHING_COUNTDOWN_MS + BREATHING_CYCLE_MS * BREATHING_CYCLES);
 }
 
-function endBreathingExercise() {
+// showRepeatPrompt=false só no caso de "me dá uma dica agora" durante o
+// exercício: aí a intenção explícita é ver a dica, não repetir a respiração
+function endBreathingExercise(showRepeatPrompt = true) {
   if (!breathingActive) return;
   breathingActive = false;
   if (breathingTimeout) clearTimeout(breathingTimeout);
   breathingTimeout = null;
   if (win && !win.isDestroyed()) win.webContents.send('end-breathing');
   // segura o sol parado até a lua terminar de virar sol de novo (mesma
-  // animação de sempre), só então retoma a caminhada e mostra a dica
-  // pendente — se ela aparecesse na hora, cortaria a transição
+  // animação de sempre); só então mostra o convite pra repetir (ou, se não
+  // for o caso, retoma a caminhada e mostra a dica pendente na hora — se
+  // ela aparecesse antes, cortaria a transição)
   setTimeout(() => {
-    resumeWalk('breathing');
-    showPendingTipIfAny();
+    if (showRepeatPrompt && win && !win.isDestroyed()) {
+      win.webContents.send('breathing-done-prompt');
+    } else {
+      resumeWalk('breathing');
+      showPendingTipIfAny();
+    }
   }, BREATHING_EXIT_ANIM_MS);
+}
+
+// o convite "toque pra respirar de novo" não foi aceito (tocou fora ou
+// esperou demais): aí sim retoma a caminhada e mostra a dica pendente
+function dismissBreathingPrompt() {
+  resumeWalk('breathing');
+  showPendingTipIfAny();
 }
 
 // "me dá uma dica agora": se estiver no modo respiração, encerra ele (com a
@@ -497,7 +511,7 @@ function endBreathingExercise() {
 function requestTipNow() {
   if (tipTimeout) clearTimeout(tipTimeout);
   triggerBubble('calm');
-  if (breathingActive) endBreathingExercise();
+  if (breathingActive) endBreathingExercise(false);
   scheduleNextTip();
 }
 
@@ -957,6 +971,14 @@ ipcMain.on('update-later', () => {
 
 ipcMain.on('stop-breathing-request', () => {
   endBreathingExercise();
+});
+
+ipcMain.on('breathing-prompt-dismissed', () => {
+  dismissBreathingPrompt();
+});
+
+ipcMain.on('breathing-again-request', () => {
+  startBreathingExercise();
 });
 
 function registerAutoLaunch() {
