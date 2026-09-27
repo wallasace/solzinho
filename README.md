@@ -13,6 +13,47 @@ vez em quando, sem abrir mão da tela pra isso.
 ![plataforma](https://img.shields.io/badge/plataforma-Windows-blue)
 ![licença](https://img.shields.io/badge/licença-PolyForm%20Internal%20Use%201.0.0-lightgrey)
 
+## Vendo ele em ação
+
+<table>
+<tr>
+<td width="50%">
+
+**Andando pela tela e dando uma dica**
+<br>Clique nele a qualquer momento pra pedir uma dica na hora.
+
+![Solzinho andando e mostrando uma dica ao ser clicado](docs/demo-andar-e-dica.gif)
+
+</td>
+<td width="50%">
+
+**Arraste e solte em movimento (física de verdade)**
+<br>Ele continua o movimento, quica na parede e desacelera suavemente.
+
+![Solzinho sendo arremessado e quicando na parede](docs/demo-arremesso.gif)
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**Exercício de respiração — eclipse**
+<br>A lua orbita o sol, cobre ele por completo e guia a respiração.
+
+![Sol virando lua num eclipse durante o exercício de respiração](docs/demo-respiracao.gif)
+
+</td>
+<td width="50%">
+
+**Menu e troca de idioma**
+<br>Botão direito abre o menu; as bandeiras trocam PT/EN na hora.
+
+![Menu do botão direito e troca de idioma entre português e inglês](docs/demo-menu-idioma.gif)
+
+</td>
+</tr>
+</table>
+
 ## O que ele faz
 
 - **Anda pela tela**: fica sempre por cima das outras janelas, para de vez
