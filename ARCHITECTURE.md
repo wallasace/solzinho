@@ -88,6 +88,11 @@ dava pra ver os raios do sol (silhueta pontuda, maior que o disco)
 espiando por trás da lua (redonda, menor naquele instante) — encolher e
 crescer em sequência, sem sobreposição, elimina isso de vez.
 
+Duração total: 0,7s (era 1,8s — achatado bastante pra transição parecer
+quase instantânea, não uma animação demorada). `BREATHING_EXIT_ANIM_MS`
+(`main.js`) e o `setTimeout` local que tira a classe `moon-exit`
+(`renderer.js`) andam junto com esse valor.
+
 O `#glow` (mesmo brilho de "dando uma dica") também liga enquanto a lua
 está por perto (`moon-mode`/`breathing`), mas vira uma coroa bem mais
 colada na silhueta da lua: menor (76px em vez de 100px) e **sem os raios
@@ -277,6 +282,19 @@ com quantos monitores a pessoa tiver, em qualquer escala e arranjo.
   vez que a cara mudava (todo tick de arremesso!). Resolvido movendo o
   emoji do rosto pra um `<span id="face">` próprio, filho de `#sun` junto
   com os outros — só o `.textContent` desse span é trocado agora.
+
+  Ao parar de se mexer (arraste solto sem virar arremesso, ou arremesso
+  decaindo até "calmo"), uma classe `.settling` (`@keyframes
+  settle-wobble`, 0,4s, `animation-fill-mode: forwards`) assenta a
+  rotação de volta a zero antes de devolver o controle pra animação de
+  idle/caminhada por baixo (nunca desligada) — sem isso, o corte era
+  seco: `rotate()` do wobble não interpola com o `translateY`/`scale()`
+  do `bob`/`breathe`, então a única saída visual era um "sumiço" abrupto.
+  `wasMoving` (em `renderer.js`) guarda a borda de descida
+  (estava-se-mexendo → parou) pra disparar isso só nesse instante exato;
+  se um novo movimento começar antes dela terminar, `.settling` é
+  cancelada na hora (senão ganharia do `weee`/`weee-mild` por vir depois
+  no arquivo).
 - **Monitor conectado/desconectado ou mudança de resolução/escala** com o
   app aberto: `keepSunOnScreen()` traz o sol de volta pro monitor mais
   próximo.

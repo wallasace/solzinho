@@ -48,7 +48,7 @@ let breathingTimeout = null;
 const BREATHING_CYCLE_MS = 16000; // inspira 4s + segura 4s + solta 4s + segura 4s
 const BREATHING_CYCLES = 4;
 const BREATHING_COUNTDOWN_MS = 3000;
-const BREATHING_EXIT_ANIM_MS = 1800; // duração da transformação lua->sol (renderer/style.css)
+const BREATHING_EXIT_ANIM_MS = 700; // duração da transformação lua->sol (renderer/style.css)
 
 const MENU_W = 260;
 const MENU_H = 590;

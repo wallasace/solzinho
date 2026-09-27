@@ -247,7 +247,7 @@ function endBreathing() {
   sunWrap.classList.remove('breathing', 'moon-mode');
   // a lua volta a ser sol (animação moon-exit no CSS)
   sunWrap.classList.add('moon-exit');
-  moonExitTimer = setTimeout(() => sunWrap.classList.remove('moon-exit'), 1700);
+  moonExitTimer = setTimeout(() => sunWrap.classList.remove('moon-exit'), 650);
   window.solzinho.speechHide();
 }
 
@@ -315,6 +315,8 @@ function setFlingSpeed(speed) {
 // de já ter se movido) ou voando livre após o arremesso; "dizzy" só no
 // instante de bater na "parede" (some sozinho quando o squash termina);
 // fora disso, cara e corpo normais.
+let wasMoving = false;
+
 function updateMotionVisual() {
   const flingCalm = flingActive && flingSpeed <= FLING_CALM_SPEED;
   const moving = isDragging || (flingActive && !flingCalm);
@@ -324,6 +326,20 @@ function updateMotionVisual() {
   sunWrap.classList.toggle('weee', wild && !impactActive);
   sunWrap.classList.toggle('weee-mild', mild && !impactActive);
   faceEl.textContent = impactActive ? SUN_FACE_DIZZY : wild ? SUN_FACE_WEEE : SUN_FACE_NORMAL;
+
+  // ao parar de se mexer (arraste solto sem virar arremesso, ou arremesso
+  // decaindo até ficar "calmo"), sem isso o balanço do weee cortava seco
+  // pro idle/caminhada — uma animação curta de assentar em vez de um corte
+  if (wasMoving && !moving && !impactActive) {
+    sunWrap.classList.remove('settling');
+    void sunWrap.offsetWidth; // reinicia se ainda estiver tocando de uma parada anterior
+    sunWrap.classList.add('settling');
+  } else if (moving) {
+    // um novo movimento começou antes do "assentar" terminar — cancela,
+    // senão ele ganharia do weee/weee-mild na empate de especificidade
+    sunWrap.classList.remove('settling');
+  }
+  wasMoving = moving;
 }
 
 function playClickBounce() {
@@ -334,6 +350,9 @@ function playClickBounce() {
 
 sunWrap.addEventListener('animationend', (event) => {
   if (event.animationName === 'click-bounce') sunWrap.classList.remove('clicked');
+  if (event.animationName === 'settle-wobble' || event.animationName === 'settle-wobble-left') {
+    sunWrap.classList.remove('settling');
+  }
 });
 
 sunWrap.addEventListener('click', () => {

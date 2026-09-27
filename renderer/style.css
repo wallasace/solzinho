@@ -289,12 +289,14 @@ html, body {
   filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35)) brightness(0.8);
 }
 
+/* duração bem mais curta que antes (era 1,8s) — a troca sol/lua tem que
+   parecer quase instantânea, não uma transição demorada */
 #sun-wrap.moon-mode #sun {
-  animation: shrink-out 1.8s ease-in-out forwards;
+  animation: shrink-out 0.7s ease-in-out forwards;
 }
 
 #sun-wrap.moon-mode #moon-wrap {
-  animation: grow-in-bounce 1.8s ease-in-out forwards;
+  animation: grow-in-bounce 0.7s ease-in-out forwards;
   pointer-events: auto;
   cursor: grab;
 }
@@ -304,11 +306,11 @@ html, body {
 }
 
 #sun-wrap.moon-exit #sun {
-  animation: grow-in-bounce 1.8s ease-in-out forwards;
+  animation: grow-in-bounce 0.7s ease-in-out forwards;
 }
 
 #sun-wrap.moon-exit #moon-wrap {
-  animation: shrink-out 1.8s ease-in-out forwards;
+  animation: shrink-out 0.7s ease-in-out forwards;
 }
 
 /* fica visível em tamanho normal e só encolhe/some rápido na segunda
@@ -453,4 +455,32 @@ html, body {
 @keyframes fling-wobble-left {
   0%, 100% { transform: scale(-1, 1) rotate(-12deg); }
   50% { transform: scale(-0.94, 1.06) rotate(12deg); }
+}
+
+/* assentar rapidinho ao parar de se mexer (arraste solto sem virar
+   arremesso, ou arremesso decaindo até "calmo") — sem isso, o balanço
+   do weee/weee-mild cortava seco pro idle/caminhada por baixo, porque
+   rotate() não interpola com o translateY/scale() do bob/breathe. Parte
+   de uma rotação leve (aproxima o que o weee-mild costuma estar fazendo)
+   e assenta em rotate(0), meio caminho até lá com um leve efeito de
+   assentar (overshoot pequeno) antes de acomodar de vez. Depois disso,
+   quem assume é a animação de idle/caminhada, que nunca foi desligada. */
+#sun-wrap.settling #sun {
+  animation: settle-wobble 0.4s ease-out forwards;
+}
+
+#sun-wrap.settling.facing-left #sun {
+  animation: settle-wobble-left 0.4s ease-out forwards;
+}
+
+@keyframes settle-wobble {
+  0%   { transform: rotate(-6deg) scale(1.02, 0.98); }
+  60%  { transform: rotate(2deg)  scale(0.99, 1.01); }
+  100% { transform: rotate(0deg)  scale(1, 1); }
+}
+
+@keyframes settle-wobble-left {
+  0%   { transform: scale(-1, 1) rotate(-6deg) scale(1.02, 0.98); }
+  60%  { transform: scale(-1, 1) rotate(2deg)  scale(0.99, 1.01); }
+  100% { transform: scale(-1, 1) rotate(0deg)  scale(1, 1); }
 }

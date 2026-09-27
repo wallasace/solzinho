@@ -237,3 +237,8 @@ funcionalidade, não releases.
 - Respiração da lua com um pouco de squash-and-stretch (infla e sobe de
   leve no "inspira", esvazia abaixo do normal e desce no "solta") em vez
   de só um pulso uniforme de escala.
+- Transição sol/lua bem mais rápida (0,7s, era 1,8s) — tinha ficado
+  demorada demais depois da simplificação.
+- Ao parar de se mexer (arraste solto ou arremesso decaindo), uma
+  animação curta de "assentar" a rotação antes de voltar pro idle/
+  caminhada, em vez do corte seco que tinha antes.
