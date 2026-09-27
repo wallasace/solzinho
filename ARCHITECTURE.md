@@ -1,454 +1,475 @@
-# Arquitetura
+# Architecture
 
-Electron puro (sem framework de UI), com múltiplas `BrowserWindow`
-transparentes e sem moldura — cada uma é uma peça visual separada, não uma
-"aba" de uma única janela.
+Plain Electron (no UI framework), with multiple transparent, frameless
+`BrowserWindow`s — each one is a separate visual piece, not a "tab" of a
+single window.
 
-## Janelas
+## Windows
 
-| Janela | Arquivo | Quando existe |
+| Window | File | When it exists |
 |---|---|---|
-| Sol (principal) | `renderer/index.html` | Sempre; contém o sol (e a lua do modo respiração) |
-| Balão | `renderer/speech.html` | Enquanto há dica ou exercício de respiração na tela |
-| Menu (botão direito) | `renderer/context-menu.html` | Enquanto o menu está aberto |
-| Frequência personalizada | `renderer/frequency-prompt.html` | Enquanto essa janela está aberta |
+| Sun (main) | `renderer/index.html` | Always; contains the sun (and the moon from breathing mode) |
+| Bubble | `renderer/speech.html` | While a tip or the breathing exercise is on screen |
+| Menu (right-click) | `renderer/context-menu.html` | While the menu is open |
+| Custom frequency | `renderer/frequency-prompt.html` | While that window is open |
 
-As janelas secundárias (balão, menu, frequência) são **criadas ao abrir e
-destruídas ao fechar**, sempre já no monitor do sol — nascer direto no
-monitor certo evita o bug do Electron de perder clique ao trocar de monitor
-(ver abaixo). Cada uma só mexe no estado global (`menuWin`, `speechWin`...)
-se ainda for a janela atual: antes, o `closed` assíncrono de um menu antigo
-apagava a referência do menu novo, que ficava órfão e o menu parava de abrir.
+Secondary windows (bubble, menu, frequency) are **created on open and
+destroyed on close**, always born already on the sun's monitor — being
+born directly on the right monitor avoids the Electron bug of losing
+clicks when switching monitors (see below). Each one only touches global
+state (`menuWin`, `speechWin`...) if it's still the current window:
+before, an old menu's async `closed` would wipe out the new menu's
+reference, leaving it orphaned and the menu would stop opening.
 
-Bug corrigido: diferente do balão (`focusable: false`, nunca disputa o
-topo da pilha), o menu precisa ser focável pra receber clique — e assim
-que abre, vira a janela mais no topo entre as de nível `'screen-saver'`.
-Se o sol se movesse depois (arraste ou quique de arremesso com o menu
-aberto) e passasse por cima da área do menu, ficava visualmente por
-baixo dele, escondido. `repositionFollowerWindows()` agora também chama
-`win.moveTop()` nesse caso — só reordena a pilha, não tira o foco do
-menu — trazendo o sol de volta pro topo sempre que ele (ou um dos
-popups) se move.
+Bug fixed: unlike the bubble (`focusable: false`, never contests the top
+of the stack), the menu needs to be focusable to receive clicks — and as
+soon as it opens, it becomes the topmost window among those at
+`'screen-saver'` level. If the sun then moved (dragging or a fling bounce
+while the menu was open) and passed over the menu's area, it would end up
+visually underneath it, hidden. `repositionFollowerWindows()` now also
+calls `win.moveTop()` in that case — it only reorders the stack, it
+doesn't take focus away from the menu — bringing the sun back to the top
+whenever it (or one of the popups) moves.
 
-### Balão (`speech.html`)
+### Bubble (`speech.html`)
 
-O renderer do sol decide o texto (dica sorteada, fase da respiração) e manda
-por IPC (`speech-show` / `speech-update` / `speech-hide`); o main cria a
-janela, o balão mede o próprio tamanho (`speech-size`) e o main o posiciona
-em volta do sol (`computeSpeechPlacement`): acima dele; abaixo, se não há
-espaço em cima; deslocado pro lado quando o sol está na borda, com a
-"pontinha" sempre apontando pro sol. O sol nunca se move pra abrir espaço.
+The sun's renderer decides the text (a random tip, breathing phase) and
+sends it over IPC (`speech-show` / `speech-update` / `speech-hide`); the
+main process creates the window, the bubble measures its own size
+(`speech-size`) and the main process positions it around the sun
+(`computeSpeechPlacement`): above it; below, if there's no room above;
+shifted to the side when the sun is at the edge, with the "tail" always
+pointing at the sun. The sun never moves to make room.
 
-Enquanto o balão de dica está na tela (`shining`), um `#mouth` — um óvalo
-pequeno, filho de `#sun`, posicionado por cima da boca do emoji 🌞 — abre
-e fecha rápido (`mouth-talk`) simulando fala; fica com `opacity:0` no
-resto do tempo, deixando o sorriso normal do emoji por baixo.
+While the tip bubble is on screen (`shining`), a `#mouth` — a small oval,
+child of `#sun`, positioned over the 🌞 emoji's mouth — opens and closes
+quickly (`mouth-talk`) simulating speech; it stays at `opacity:0` the rest
+of the time, leaving the emoji's normal smile showing underneath.
 
-O balão tem uma cor própria por tipo de dica — identidade visual, não só
-texto: `kind: 'tip'` (dica de acalmar) fica no âmbar padrão,
-`kind: 'physical'` (pausa física: água/alongar) fica verde-água
-(`.speech-card.physical`, mesmo layout do `.tip`, só a paleta muda). O
-`kind` chega do renderer do sol (`showBubble()`, a partir do parâmetro
-`kind` já usado pra escolher o pool de mensagens).
+The bubble has its own color per tip type — visual identity, not just
+text: `kind: 'tip'` (calming tip) stays the default amber,
+`kind: 'physical'` (physical break: water/stretch) is mint green
+(`.speech-card.physical`, same layout as `.tip`, only the palette
+changes). The `kind` comes from the sun's renderer (`showBubble()`, from
+the `kind` parameter already used to pick the message pool).
 
-No menu (`context-menu.js`), as opções de estado persistente (dicas,
-caminhada, sons, iniciar com o Windows) usam um indicador quadrado
-(`.toggle-dot`, preenchido e com "check" quando ativo) em vez de só trocar
-o texto do verbo — dá pra ver o estado atual de cara, sem precisar ler.
+In the menu (`context-menu.js`), the persistent-state options (tips,
+walking, sounds, start with Windows) use a square indicator
+(`.toggle-dot`, filled with a "check" when active) instead of just
+swapping the verb's text — you can see the current state at a glance,
+without having to read.
 
-Óculos escuros (`#sunglasses`, um SVG de dois lados/ponte, filho de
-`#sun` — acompanha sozinho qualquer bob/talk/wobble que o sol já tiver,
-sem reaplicar animação num elemento irmão): `settings.sunglasses`
-(persistido), alternado pelo botão só-ícone (🕶️, estilo `.lang-btn`
-reaproveitado) no menu, ação `toggle-sunglasses`. Desligado durante o
-modo lua/eclipse (não faz sentido nesse estado). Formato Wayfarer
-(lentes trapezoidais, mais largas em cima, com ponte e hastes grossas) —
-o "estilo Ray-Ban" clássico, pedido explicitamente.
+Sunglasses (`#sunglasses`, an SVG with two lenses/a bridge, child of
+`#sun` — it follows along on its own with whatever bob/talk/wobble the
+sun already has, without reapplying the animation on a sibling element):
+`settings.sunglasses` (persisted), toggled by the icon-only button (🕶️,
+reusing the `.lang-btn` style) in the menu, action `toggle-sunglasses`.
+Turned off during moon/eclipse mode (doesn't make sense in that state).
+Wayfarer shape (trapezoidal lenses, wider on top, with a bridge and
+thick temples) — the classic "Ray-Ban style", explicitly requested.
 
-A boca (`#mouth`) precisou de alguns ajustes depois de ver rodando: larga
-o bastante (27px) pra cobrir o sorriso inteiro do emoji por baixo (senão
-sobrava um pedaço do sorriso original ao lado da boca falando, os dois
-juntos, esquisito) e uma abertura mais contida (`scaleY` de pico 1.5, era
-2.2 — estava exagerada). Também só fala com `:not(.weee):not(.weee-mild)
-:not(.dizzy)` — falar E balançar de arraste/arremesso ao mesmo tempo
-interferia visualmente um no outro.
+The mouth (`#mouth`) needed a few adjustments after seeing it run: wide
+enough (27px) to fully cover the emoji's smile underneath (otherwise a
+piece of the original smile was left showing next to the talking mouth,
+the two together looking odd) and a more contained opening (peak
+`scaleY` of 1.5, was 2.2 — it was exaggerated). It also only talks with
+`:not(.weee):not(.weee-mild):not(.dizzy)` — talking AND wobbling from a
+drag/fling at the same time interfered with each other visually.
 
-`settings.sunglasses` tem `false` como padrão de verdade — nasce
-desligado numa instalação nova.
+`settings.sunglasses` genuinely defaults to `false` — starts off on a
+fresh install.
 
-### Retorno visual ao buscar atualização
+### Visual feedback while checking for an update
 
-`#sun-wrap.checking-update` liga o mesmo `#glow` de outros estados, com
-os raios girando rápido (1,2s, bem mais rápido que qualquer outro
-estado) — um "buscando" visível, já que a checagem quase sempre não
-mostra popup nenhum (só quando acha uma atualização de verdade ou
-quando é pedido manual e falha). `setCheckingUpdate()` (`main.js`) liga
-isso a partir do evento `checking-for-update` do `autoUpdater` de
-verdade (só existe com o app empacotado) e desliga nos outros eventos
-(`update-downloaded`, `update-not-available`, `error`). Em modo
-desenvolvimento não tem `autoUpdater` de verdade pra escutar
-(`initAutoUpdater()` nem roda), então `checkForUpdatesNow()` simula: liga
-`checking-update` na hora, espera 1,6s e desliga antes de mostrar o
-popup de "modo desenvolvimento" — dá pra validar a animação sem precisar
-de uma versão instalada de verdade.
+`#sun-wrap.checking-update` turns on the same `#glow` used by other
+states, with the rays spinning fast (1.2s, much faster than any other
+state) — a visible "searching" cue, since the check almost never shows
+any popup (only when it actually finds an update, or when it's a manual
+request and it fails). `setCheckingUpdate()` (`main.js`) turns this on
+from the real `autoUpdater`'s `checking-for-update` event (only exists
+with the packaged app) and turns it off on the other events
+(`update-downloaded`, `update-not-available`, `error`). In development
+mode there's no real `autoUpdater` to listen to (`initAutoUpdater()`
+doesn't even run), so `checkForUpdatesNow()` simulates it: turns
+`checking-update` on right away, waits 1.6s and turns it off before
+showing the "development mode" popup — lets you validate the animation
+without needing a real installed version.
 
-### Modo respiração: transformação sol/lua
+### Breathing mode: sun/moon transformation
 
-Classes no `#sun-wrap`: `moon-mode` (a lua 🌚 surge pequena no centro e
-cresce até o tamanho normal com um bounce no final — `@keyframes
-grow-in-bounce` — enquanto o sol encolhe e some no mesmo lugar
-— `@keyframes shrink-out`), `breathing` (a lua, já assentada, infla/esvazia
-em ciclos de 16s) e `moon-exit` (o mesmo movimento com os papéis
-trocados: o sol surge pequeno e cresce com o bounce — `grow-in-bounce` —
-enquanto a lua encolhe e some — `shrink-out`). Sem órbita nem rotação: é
-só um crossfade com scale, então as duas `@keyframes` servem pra qualquer
-um dos dois lados da transição, só trocando qual elemento recebe qual.
-Nesse instante a lua escurece um pouco (`filter: brightness(0.8)` em
-`#sun-wrap.breathing #moon`), simulando a sombra do eclipse.
+Classes on `#sun-wrap`: `moon-mode` (the moon 🌚 appears small in the
+center and grows to normal size with a bounce at the end — `@keyframes
+grow-in-bounce` — while the sun shrinks and disappears in the same spot
+— `@keyframes shrink-out`), `breathing` (the moon, already settled,
+inflates/deflates in 16s cycles) and `moon-exit` (the same motion with
+the roles swapped: the sun appears small and grows with the bounce —
+`grow-in-bounce` — while the moon shrinks and disappears — `shrink-out`).
+No orbit or rotation: it's just a crossfade with scale, so both
+`@keyframes` work for either side of the transition, just swapping which
+element gets which. At that moment the moon darkens a bit
+(`filter: brightness(0.8)` on `#sun-wrap.breathing #moon`), simulating
+the eclipse's shadow.
 
-As duas `@keyframes` são **sequenciais, não simultâneas**: quem está
-desaparecendo segura o tamanho cheio até 45% e só aí encolhe rápido até
-sumir aos 50%; quem está aparecendo fica escondido até esses mesmos 50%
-e só depois cresce com o bounce. Bug corrigido: com as duas rodando ao
-mesmo tempo o 1,8s inteiro (crossfade "de verdade"), no meio da transição
-dava pra ver os raios do sol (silhueta pontuda, maior que o disco)
-espiando por trás da lua (redonda, menor naquele instante) — encolher e
-crescer em sequência, sem sobreposição, elimina isso de vez.
+The two `@keyframes` are **sequential, not simultaneous**: whoever is
+disappearing holds full size until 45% and only then quickly shrinks
+away by 50%; whoever is appearing stays hidden until that same 50% mark
+and only then grows in with the bounce. Bug fixed: with both running at
+the same time for the whole 1.8s (a "real" crossfade), midway through the
+transition you could see the sun's rays (a spiky silhouette, bigger than
+the disc) peeking out from behind the moon (round, smaller at that
+instant) — shrinking and growing in sequence, with no overlap, gets rid
+of that for good.
 
-Duração total: 0,7s (era 1,8s — achatado bastante pra transição parecer
-quase instantânea, não uma animação demorada). `BREATHING_EXIT_ANIM_MS`
-(`main.js`) e o `setTimeout` local que tira a classe `moon-exit`
-(`renderer.js`) andam junto com esse valor.
+Total duration: 0.7s (was 1.8s — flattened quite a bit so the transition
+feels almost instant, not a slow animation). `BREATHING_EXIT_ANIM_MS`
+(`main.js`) and the local `setTimeout` that removes the `moon-exit` class
+(`renderer.js`) are kept in sync with this value.
 
-O `#glow` (mesmo brilho de "dando uma dica") também liga enquanto a lua
-está por perto (`moon-mode`/`breathing`), mas vira uma coroa bem mais
-colada na silhueta da lua: menor (76px em vez de 100px) e **sem os raios
-girando** (`#rays { opacity: 0 }` nesses estados) — só o anel de brilho
-(`#glow-circle`) pulsando. Ao voltar pro sol (`moon-exit`) o brilho fica
-desligado — o sol reaparece sozinho, sem coroa atrás. Os cliques são
-ouvidos no `#sun-wrap`, não no `#sun`, pra funcionarem também sobre a lua.
+The `#glow` (the same glow used for "giving a tip") also turns on while
+the moon is around (`moon-mode`/`breathing`), but becomes a corona that
+hugs the moon's silhouette much more closely: smaller (76px instead of
+100px) and **with the rays not spinning** (`#rays { opacity: 0 }` in
+those states) — just the glow ring (`#glow-circle`) pulsing. When
+returning to the sun (`moon-exit`) the glow is turned off — the sun
+reappears on its own, with no corona behind it. Clicks are listened for
+on `#sun-wrap`, not `#sun`, so they also work over the moon.
 
-Bug corrigido: o `<svg>` do `#glow` corta o próprio desenho na borda do seu
-`viewBox` por padrão (comportamento do navegador); o pulso do círculo de
-brilho (`glow-pulse`) passa um pouco dela no pico da escala, cortando uma
-fatia do brilho — corrigido com `overflow: visible` no `#glow`.
+Bug fixed: the `#glow` `<svg>` clips its own drawing at its `viewBox`'s
+edge by default (browser behavior); the glow circle's pulse
+(`glow-pulse`) goes slightly past it at the peak of the scale, cutting
+off a slice of the glow — fixed with `overflow: visible` on `#glow`.
 
-Ao terminar (por clique ou pelo tempo acabar), em vez de retomar a
-caminhada na hora, o main manda `breathing-done-prompt` e o renderer
-mostra um convite no balão ("Como você está? / toque para respirar de
-novo", com o texto do convite em destaque — `.speech-card.cta #hint`,
-diferente do texto discreto de "toque para parar" do exercício em si).
-Tocando nele (`breathing-again-request`), o exercício recomeça do zero
-(nova contagem regressiva); se ninguém tocar em `BREATHING_PROMPT_MS`
-(7s), o renderer mesmo manda `breathing-prompt-dismissed` e só aí o main
-retoma a caminhada e mostra a dica pendente, se houver. `requestTipNow()`
-(pedir uma dica agora, inclusive durante o exercício) pula esse convite
-de propósito — a intenção ali é ver a dica, não repetir a respiração.
+When it ends (by click or time running out), instead of resuming the
+walk right away, the main process sends `breathing-done-prompt` and the
+renderer shows an invitation in the bubble ("How are you feeling? / tap
+to breathe again", with the invitation's text highlighted —
+`.speech-card.cta #hint`, different from the discreet "tap to stop" text
+of the exercise itself). Tapping it (`breathing-again-request`) restarts
+the exercise from scratch (a new countdown); if no one taps it within
+`BREATHING_PROMPT_MS` (7s), the renderer itself sends
+`breathing-prompt-dismissed` and only then does the main process resume
+walking and show the pending tip, if there is one. `requestTipNow()`
+(asking for a tip now, including during the exercise) skips this
+invitation on purpose — the intent there is to see the tip, not to
+repeat the breathing.
 
-Todas usam `transparent: true`, `frame: false`, `alwaysOnTop: true` (nível
-`screen-saver`, o mais alto do Electron) e `skipTaskbar: true`. A janela do
-sol é `focusable: false` de propósito — ela nunca deve roubar foco de outra
-janela; por isso o arraste é feito manualmente (veja abaixo), não com
-`-webkit-app-region: drag` nativo (que quebra clique/menu de contexto — ver
+All of them use `transparent: true`, `frame: false`,
+`alwaysOnTop: true` (`screen-saver` level, Electron's highest) and
+`skipTaskbar: true`. The sun's window is `focusable: false` on purpose —
+it should never steal focus from another window; that's why dragging is
+done manually (see below), not with native
+`-webkit-app-region: drag` (which breaks clicking/the context menu — see
 CHANGELOG).
 
-## Processo principal (`main.js`)
+## Main process (`main.js`)
 
-Dono de todo o estado: posição do sol, configurações (`settings.json` em
-`app.getPath('userData')`), e todos os timers. Os renderers não guardam
-estado que sobrevive a um reload — só main.js.
+Owner of all the state: the sun's position, settings (`settings.json` in
+`app.getPath('userData')`), and every timer. Renderers don't hold state
+that survives a reload — only main.js does.
 
-### Ancoragem das janelas secundárias
+### Anchoring the secondary windows
 
-O menu e a janela de frequência não são posicionados na tela toda; eles são
-calculados a partir da posição atual do sol (`computeMenuPosition`,
-`computeFreqPromptPosition`, em `main.js`), e se o sol for arrastado
-enquanto uma delas está aberta, `repositionFollowerWindows()` os realinha
-em tempo real.
+The menu and the frequency window aren't positioned relative to the whole
+screen; they're computed from the sun's current position
+(`computeMenuPosition`, `computeFreqPromptPosition`, in `main.js`), and
+if the sun is dragged while one of them is open,
+`repositionFollowerWindows()` realigns them in real time.
 
-Ponto de atenção: a janela do sol (`WIN_H = 320`) é bem maior que o sol
-visível (`96px` de altura, ancorado no rodapé da janela) — herança de
-quando o balão morava nela. Por isso existe `SUN_VISUAL_TOP_MARGIN` /
-`getSunAnchorTop()` / `sunVisualRect()`: sem isso, quem
-ancora no sol acaba ancorando no topo da janela invisível, bem acima de
-onde o sol realmente está.
+A point worth noting: the sun's window (`WIN_H = 320`) is much taller
+than the visible sun (`96px` tall, anchored at the window's bottom) — a
+holdover from when the bubble used to live inside it. That's why
+`SUN_VISUAL_TOP_MARGIN` / `getSunAnchorTop()` / `sunVisualRect()` exist:
+without them, anything anchoring to the sun would end up anchoring to
+the top of the invisible window, well above where the sun actually is.
 
-### Motivos de pausa da caminhada (`pauseReasons`)
+### Reasons to pause walking (`pauseReasons`)
 
-A caminhada do sol pode ser pausada por vários motivos ao mesmo tempo:
-mostrando uma dica, ciclo de "parada pra respirar" aleatório, exercício de
-respiração, menu aberto, janela de frequência aberta. Isso é modelado como
-um `Set` de motivos (`pauseWalk(reason)` / `resumeWalk(reason)`), não um
-booleano único — um booleano único já causou um bug real (o ciclo de idle
-"destravava" a caminhada mesmo com um popup ainda aberto, porque os dois
-mexiam na mesma variável). Andar só é permitido quando o `Set` está vazio.
+The sun's walk can be paused for several reasons at the same time:
+showing a tip, the random "stop to breathe" cycle, the breathing
+exercise, the menu open, the frequency window open. This is modeled as a
+`Set` of reasons (`pauseWalk(reason)` / `resumeWalk(reason)`), not a
+single boolean — a single boolean already caused a real bug (the idle
+cycle would "unlock" walking even with a popup still open, because both
+touched the same variable). Walking is only allowed when the `Set` is
+empty.
 
-### Dica pendente (`pendingTip`)
+### Pending tip (`pendingTip`)
 
-Se a hora de mostrar uma dica chega enquanto o app está "ocupado" (menu ou
-popup aberto, ou exercício de respiração rolando — ver `isBusy()`), a dica
-não aparece atrás do popup; ela fica guardada em `pendingTip` (guarda só
-**uma**, nunca acumula) e é mostrada assim que o que estava ocupando a tela
-terminar (`showPendingTipIfAny()`, chamado nos handlers de fechamento de
-cada popup e no fim do exercício de respiração).
+If it's time to show a tip while the app is "busy" (a menu or popup
+open, or the breathing exercise running — see `isBusy()`), the tip
+doesn't show up behind the popup; it's stored in `pendingTip` (holds
+only **one**, never piles up) and is shown as soon as whatever was
+occupying the screen finishes (`showPendingTipIfAny()`, called in the
+close handlers of each popup and at the end of the breathing exercise).
 
-Pedir uma dica pelo menu ("Me dá uma dica agora") enquanto está no modo
-respiração não espera o exercício acabar sozinho: `requestTipNow()` chama
-`endBreathingExercise(false)` — o `false` pula o convite de repetir (ver
-acima) — e a dica só aparece depois que a transição termina
-(`endBreathingExercise` segura o próximo passo atrás de um `setTimeout` de
-`BREATHING_EXIT_ANIM_MS`, igual à duração do `grow-in-bounce`/`shrink-out`
-em `renderer/style.css`, pra não cortar a animação mostrando o balão em
-cima dela).
+Asking for a tip through the menu ("Give me a tip now") while in
+breathing mode doesn't wait for the exercise to end on its own:
+`requestTipNow()` calls `endBreathingExercise(false)` — the `false`
+skips the repeat invitation (see above) — and the tip only shows up
+after the transition finishes (`endBreathingExercise` holds the next
+step behind a `setTimeout` of `BREATHING_EXIT_ANIM_MS`, matching the
+duration of `grow-in-bounce`/`shrink-out` in `renderer/style.css`, so it
+doesn't cut the animation short by showing the bubble on top of it).
 
-### Dois ciclos de dica independentes
+### Two independent tip cycles
 
-`scheduleNextTip()` (dicas de acalmar, frequência configurável pelo menu) e
-`scheduleNextPhysicalTip()` (água/esticar/levantar, frequência fixa em
-`PHYSICAL_TIP_MINUTES`) rodam em paralelo, cada um com seu próprio timer e
-jitter. Os dois passam pelo mesmo `triggerBubble(kind)` /
-`isBusy()` / `pendingTip`, então nunca aparecem um por cima do outro.
+`scheduleNextTip()` (calming tips, frequency configurable from the menu)
+and `scheduleNextPhysicalTip()` (water/stretch/stand up, fixed frequency
+in `PHYSICAL_TIP_MINUTES`) run in parallel, each with its own timer and
+jitter. Both go through the same `triggerBubble(kind)` / `isBusy()` /
+`pendingTip`, so they never show up on top of each other.
 
-Com as dicas pausadas (`settings.tipsPaused`), `triggerBubble()` retorna
-na hora — clicar no sol nesse estado pedia uma dica que nunca aparecia,
-sem bolha nenhuma pra tocar o barulhinho de sempre (`playChime()` vive
-dentro de `showBubble()`, só dispara quando a bolha realmente aparece).
-O clique ficava mudo. Corrigido tocando o chime direto no clique
-(`renderer.js`) quando `tipsPaused` está ligado — o renderer passa a
-acompanhar esse valor via `init-settings` e um novo evento
-`tips-paused-changed` (enviado pelo main só quando o menu alterna a
-opção). Fora desse caso, quem toca o som continua sendo `showBubble()`
-como sempre, pra não duplicar.
+With tips paused (`settings.tipsPaused`), `triggerBubble()` returns right
+away — clicking the sun in that state asked for a tip that never
+appeared, with no bubble at all to play the usual little sound
+(`playChime()` lives inside `showBubble()`, only fires when the bubble
+actually shows up). The click stayed silent. Fixed by playing the chime
+directly on click (`renderer.js`) when `tipsPaused` is on — the renderer
+now keeps track of that value via `init-settings` and a new
+`tips-paused-changed` event (sent by the main process only when the menu
+toggles the option). Outside of that case, `showBubble()` still plays the
+sound as always, so it doesn't play twice.
 
-## Arraste manual (não usa `-webkit-app-region: drag`)
+## Manual dragging (doesn't use `-webkit-app-region: drag`)
 
-O sol começou usando a região de drag nativa do Chromium, mas isso faz o
-Windows tratar aquela área como barra de título — clique normal e botão
-direito param de funcionar (o SO intercepta o mousedown antes do DOM).
-A solução final: o renderer só avisa início (`mousedown`) e fim
-(`mouseup`) do arraste; enquanto dura, o main process lê o cursor com
-`screen.getCursorScreenPoint()` a cada 16ms e move a janela.
+The sun started out using Chromium's native drag region, but that makes
+Windows treat that area as a title bar — regular click and right-click
+stop working (the OS intercepts the mousedown before the DOM sees it).
+The final solution: the renderer only announces the start (`mousedown`)
+and end (`mouseup`) of the drag; while it lasts, the main process reads
+the cursor with `screen.getCursorScreenPoint()` every 16ms and moves the
+window.
 
-Por que o cursor é lido no main e não no renderer: com monitores de escalas
-diferentes (ex.: 100% e 150%), o `screenX`/`screenY` do renderer fica em
-outro sistema de coordenadas ao cruzar de tela, e o arraste travava.
-Pelo mesmo motivo, o renderer encerra o arraste se receber `mousemove` com
-nenhum botão pressionado — o `mouseup` pode se perder na troca de tela.
+Why the cursor is read in the main process and not the renderer: with
+monitors at different scales (e.g. 100% and 150%), the renderer's
+`screenX`/`screenY` ends up in a different coordinate system when
+crossing screens, and dragging would get stuck. For the same reason, the
+renderer ends the drag if it gets a `mousemove` with no button pressed —
+`mouseup` can get lost when switching screens.
 
-## Onde a janela do sol aceita clique
+## Where the sun's window accepts clicks
 
-A janela do sol deixa o mouse atravessar (`setIgnoreMouseEvents(true)`),
-exceto sobre o sol. Quem decide é `hoverTick()` no main, a cada 50ms,
-comparando `screen.getCursorScreenPoint()` com `sunVisualRect()`.
+The sun's window lets the mouse pass through (`setIgnoreMouseEvents(true)`),
+except over the sun. `hoverTick()` in the main process decides this,
+every 50ms, comparing `screen.getCursorScreenPoint()` against
+`sunVisualRect()`.
 
-A versão anterior usava `mouseenter`/`mouseleave` no renderer, que dependem
-do repasse de mouse do Windows (`forward: true`). Em monitor com escala !=
-100% esse repasse informa a posição errada, o sol nunca "percebia" o mouse
-em cima e ficava impossível de clicar/arrastar depois de mudar de tela.
+The previous version used `mouseenter`/`mouseleave` in the renderer,
+which depend on Windows' mouse forwarding (`forward: true`). On a
+monitor with a scale != 100%, that forwarding reports the wrong
+position, the sun would never "notice" the mouse over it, and it became
+impossible to click/drag after switching screens.
 
-### Bug do Electron ao trocar de monitor com escala diferente
+### Electron bug when switching to a monitor with a different scale
 
-Uma janela criada num monitor de 100% e levada (com `setBounds`) para um
-de 150% passa a **perder o `mousedown`**: o `mouseup` chega, o `mousedown`
-não, então o arraste nunca começa. Janela criada direto no monitor de 150%
-não tem o problema, e janelas pequenas (120×120) também não — com o
-tamanho da do sol (260×320) acontece sempre. Não é o cálculo de posição:
-foi medido com `GetWindowRect` e com print da tela, e janela, desenho e
-área clicável estavam todos no lugar certo.
+A window created on a 100% monitor and moved (with `setBounds`) to a
+150% one starts **losing `mousedown`**: `mouseup` arrives, `mousedown`
+doesn't, so dragging never starts. A window created directly on the 150%
+monitor doesn't have the problem, and neither do small windows
+(120×120) — with the sun's size (260×320) it happens every time. It's
+not a position calculation issue: it was measured with `GetWindowRect`
+and a screenshot, and the window, the drawing and the clickable area
+were all in the right place.
 
-O que resolve: um redimensionamento de verdade (1px maior e volta), ou
-esconder e mostrar a janela. Usamos o redimensionamento, que não pisca:
-`setSunBounds()` detecta quando a janela muda de monitor e, assim que
-não estiver mais sendo arrastada, chama `refreshInputAfterDisplayChange()`.
+What fixes it: a real resize (1px bigger and back), or hiding and
+showing the window. We use the resize, since it doesn't flicker:
+`setSunBounds()` detects when the window changes monitor and, as soon as
+it's no longer being dragged, calls `refreshInputAfterDisplayChange()`.
 
-## Posição do sol e múltiplos monitores
+## Sun position and multiple monitors
 
-A posição da janela do sol é guardada em `sunPos` (com casas decimais) e
-aplicada por `setSunBounds()`, em vez de relida com `getBounds()` a cada
-passo: num monitor com escala != 100% o Windows arredonda a posição e um
-passo de ~1px some — o sol "andava" sem sair do lugar. `setSunBounds()`
-também corrige o tamanho da janela, que o Windows pode alterar ao cruzar
-para um monitor de outra escala.
+The sun window's position is stored in `sunPos` (with decimal places)
+and applied via `setSunBounds()`, instead of being re-read with
+`getBounds()` on every step: on a monitor with a scale != 100%, Windows
+rounds the position and a ~1px step disappears — the sun would "walk"
+without moving. `setSunBounds()` also fixes the window's size, which
+Windows can change when crossing into a monitor with a different scale.
 
-Nada é fixo para um setup específico: todos os limites vêm de
-`screen.getAllDisplays()` / `getDisplayNearestPoint()`, então funciona
-com quantos monitores a pessoa tiver, em qualquer escala e arranjo.
+Nothing is hardcoded for a specific setup: every boundary comes from
+`screen.getAllDisplays()` / `getDisplayNearestPoint()`, so it works with
+however many monitors someone has, at any scale and arrangement.
 
-- **Caminhada**: fica no monitor onde o sol está (de borda a borda dele);
-  nunca troca de tela sozinha.
-- **Arraste**: é o único jeito de mudar de monitor; pode ir pra qualquer
-  um, travado no monitor onde o sol vai ficar.
-- **Arremesso**: soltar o sol em movimento rápido continua o movimento
-  (`startFlingIfFast` / `flingTick`, em `main.js`) — atrito a cada tick,
-  quique nas bordas do monitor atual (perde parte da velocidade), até
-  parar sozinho e a caminhada normal retomar. A velocidade é estimada em
-  `dragTick()` comparando a posição a cada 16ms, suavizada entre ticks pra
-  não ficar nervosa. Arrastar de novo no meio do arremesso cancela ele.
-  A reta final tem um freio mais forte (`FLING_EASE_SPEED` /
-  `FLING_EASE_FRICTION`) do que o atrito normal do "cruzeiro": sem isso,
-  o atrito fraco de sempre levava muito tempo pra chegar perto de zero, e
-  o corte em `FLING_STOP_SPEED` acontecia com o sol ainda visivelmente em
-  movimento — um "easy out" suave em ~0,5s em vez de um travão seco.
-  Sendo arrastado (depois de já ter se movido) é sempre a empolgação
-  máxima; voando livre depois do arremesso, a empolgação tem graus
-  conforme a velocidade atual (`main.js` manda `fling-speed` a cada tick
-  do `flingTick()`, não só no início): acima de `FLING_WILD_SPEED` (260
-  px/s) é `#sun-wrap.weee` — cara de "weeeee" (😆) e balanço rápido
-  (`weee-wobble`); abaixo disso (mas ainda em movimento) é
-  `#sun-wrap.weee-mild` — mesma cara normal, só um balanço bem mais
-  discreto e devagar (`weee-wobble-mild`); abaixo de `FLING_CALM_SPEED`
-  (40 px/s, "quase parando") nenhuma das duas classes liga mais — a
-  animação de idle/caminhada por baixo (nunca desligada) volta a aparecer
-  sozinha, então a transição pro estado normal já acontece antes do
-  arremesso terminar de verdade, não só no instante exato em que ele para.
-  Em qualquer um dos dois graus de empolgação, o `#glow` (mesmo brilho de
-  outros estados) liga com um pulso bem sutil (encolhe um pouco e volta) e
-  os raios giram bem mais devagar que em qualquer outro estado (26s no
-  "weee", 40s no "weee-mild"). No instante exato de bater numa borda,
-  `#sun-wrap.dizzy` sobrepõe brevemente uma cara de tonto (😵) e um balanço
-  mais brusco (`fling-wobble`, reaproveitado do design anterior) por cima
-  do que estava tocando — dura o mesmo tanto que o squash do impacto
-  (`animationend` de `wall-squash-x/y` desliga o `dizzy`) e depois volta
-  sozinho pro grau de empolgação correspondente à velocidade atual, já que
-  o voo continua. `updateMotionVisual()` (em `renderer.js`) centraliza essa
-  troca de cara/classe a partir de `isDragging`, `flingActive`,
-  `flingSpeed` e `impactActive`, sempre mutuamente exclusivos entre si.
+- **Walking**: stays on the monitor the sun is on (edge to edge of it);
+  never switches screens on its own.
+- **Dragging**: the only way to change monitor; can go to any of them,
+  locked to whichever monitor the sun ends up on.
+- **Fling**: releasing the sun while moving fast keeps the motion going
+  (`startFlingIfFast` / `flingTick`, in `main.js`) — friction on every
+  tick, bouncing off the current monitor's edges (loses part of the
+  speed), until it stops on its own and normal walking resumes. Speed is
+  estimated in `dragTick()` by comparing position every 16ms, smoothed
+  between ticks so it doesn't get jittery. Dragging again mid-fling
+  cancels it. The final stretch has a stronger brake
+  (`FLING_EASE_SPEED` / `FLING_EASE_FRICTION`) than the normal "cruise"
+  friction: without it, the usual weak friction took too long to get
+  close to zero, and the cutoff at `FLING_STOP_SPEED` happened while the
+  sun was still visibly moving — a smooth "easy out" over ~0.5s instead
+  of an abrupt stop. Being dragged (after it's already moved) is always
+  maximum excitement; flying free after a fling, the excitement has
+  degrees depending on the current speed (`main.js` sends `fling-speed`
+  on every tick of `flingTick()`, not just at the start): above
+  `FLING_WILD_SPEED` (260 px/s) it's `#sun-wrap.weee` — a "weeeee" face
+  (😆) and a fast wobble (`weee-wobble`); below that (but still moving)
+  it's `#sun-wrap.weee-mild` — same normal face, just a much more
+  discreet, slower wobble (`weee-wobble-mild`); below
+  `FLING_CALM_SPEED` (40 px/s, "almost stopped") neither class is on
+  anymore — the idle/walking animation underneath (never turned off)
+  shows through again on its own, so the transition to the normal state
+  already happens before the fling actually finishes, not only at the
+  exact instant it stops. In either degree of excitement, the `#glow`
+  (the same glow used by other states) turns on with a very subtle pulse
+  (shrinks a bit and back) and the rays spin much slower than in any
+  other state (26s for "weee", 40s for "weee-mild"). At the exact instant
+  of hitting an edge, `#sun-wrap.dizzy` briefly overlays a dizzy face
+  (😵) and a rougher wobble (`fling-wobble`, reused from the earlier
+  design) on top of whatever was playing — it lasts as long as the
+  impact's squash (`animationend` on `wall-squash-x/y` turns `dizzy` off)
+  and then goes back on its own to whichever degree of excitement
+  matches the current speed, since the flight continues.
+  `updateMotionVisual()` (in `renderer.js`) centralizes this face/class
+  switching from `isDragging`, `flingActive`, `flingSpeed` and
+  `impactActive`, always mutually exclusive with each other.
 
-  Bug corrigido: a troca de cara usava `sunEl.textContent = ...`, que
-  **apaga todos os filhos** do `#sun` — inofensivo enquanto ele só tinha
-  texto, mas destruía os `#mouth`/`#sunglasses` (adicionados depois) toda
-  vez que a cara mudava (todo tick de arremesso!). Resolvido movendo o
-  emoji do rosto pra um `<span id="face">` próprio, filho de `#sun` junto
-  com os outros — só o `.textContent` desse span é trocado agora.
+  Bug fixed: the face swap used `sunEl.textContent = ...`, which
+  **wipes out all of `#sun`'s children** — harmless while it only had
+  text, but it destroyed the `#mouth`/`#sunglasses` (added later) every
+  time the face changed (every fling tick!). Fixed by moving the face
+  emoji into its own `<span id="face">`, a child of `#sun` alongside the
+  others — only that span's `.textContent` is swapped now.
 
-  Ao parar de se mexer (arraste solto sem virar arremesso, ou arremesso
-  decaindo até "calmo"), uma classe `.settling` (`@keyframes
-  settle-wobble`, 0,4s, `animation-fill-mode: forwards`) assenta a
-  rotação de volta a zero antes de devolver o controle pra animação de
-  idle/caminhada por baixo (nunca desligada) — sem isso, o corte era
-  seco: `rotate()` do wobble não interpola com o `translateY`/`scale()`
-  do `bob`/`breathe`, então a única saída visual era um "sumiço" abrupto.
-  `wasMoving` (em `renderer.js`) guarda a borda de descida
-  (estava-se-mexendo → parou) pra disparar isso só nesse instante exato;
-  se um novo movimento começar antes dela terminar, `.settling` é
-  cancelada na hora (senão ganharia do `weee`/`weee-mild` por vir depois
-  no arquivo).
-- **Monitor conectado/desconectado ou mudança de resolução/escala** com o
-  app aberto: `keepSunOnScreen()` traz o sol de volta pro monitor mais
-  próximo.
+  When it stops moving (letting go of a drag without it turning into a
+  fling, or a fling decaying down to "calm"), a `.settling` class
+  (`@keyframes settle-wobble`, 0.4s, `animation-fill-mode: forwards`)
+  eases the rotation back to zero before handing control back to the
+  idle/walking animation underneath (never turned off) — without this,
+  the cut was abrupt: the wobble's `rotate()` doesn't interpolate with
+  `bob`/`breathe`'s `translateY`/`scale()`, so the only visual outcome
+  was an abrupt "vanishing". `wasMoving` (in `renderer.js`) tracks the
+  falling edge (was moving → stopped) to trigger this only at that exact
+  instant; if a new movement starts before it finishes, `.settling` is
+  cancelled right away (otherwise it would win over `weee`/`weee-mild`
+  by coming later in the file).
+- **A monitor being connected/disconnected, or a resolution/scale
+  change**, with the app open: `keepSunOnScreen()` brings the sun back to
+  the nearest monitor.
 
-O limite de tela (`clampSunWindowPosition`) é aplicado ao **sol visível**,
-não à janela: a janela tem ~80px invisíveis de cada lado e ~210px em cima
-(espaço do balão), então travar a janela deixava um vão até a borda real.
-A parte invisível pode sair da tela; o sol nunca sai. A barra de tarefas
-é sempre respeitada (usa-se `workArea`, não `bounds`). O balão, por ter
-janela própria, se ajusta à borda sozinho — o sol não se move pra falar.
+The screen boundary (`clampSunWindowPosition`) is applied to the
+**visible sun**, not the window: the window has ~80px invisible on each
+side and ~210px on top (room for the bubble), so locking the window would
+leave a gap up to the real edge. The invisible part can go off-screen;
+the sun never does. The taskbar is always respected (`workArea` is used,
+not `bounds`). The bubble, having its own window, adjusts to the edge on
+its own — the sun doesn't move to make room for it.
 
-## Idioma (i18n)
+## Language (i18n)
 
-`renderer/i18n.js` é um dicionário simples `{ pt: {...}, en: {...} }`
-carregado por qualquer janela que precise de texto de interface (índice
-principal, menu, janela de frequência). As mensagens de dica em si vivem
-em `renderer/messages.js`, também por idioma (`MESSAGES.pt` /
-`MESSAGES.en`, `PHYSICAL_MESSAGES.pt` / `.en`). Trocar o idioma pelo menu
-salva em `settings.language` e manda `language-changed` pra janela
-principal atualizar na hora — não precisa reiniciar o app.
+`renderer/i18n.js` is a simple `{ pt: {...}, en: {...} }` dictionary
+loaded by any window that needs interface text (main index, menu,
+frequency window). The tip messages themselves live in
+`renderer/messages.js`, also by language (`MESSAGES.pt` / `MESSAGES.en`,
+`PHYSICAL_MESSAGES.pt` / `.en`). Switching the language from the menu
+saves it to `settings.language` and sends `language-changed` to the main
+window to update it on the spot — no app restart needed.
 
-## Som
+## Sound
 
-Todo som do app é sintetizado na hora com a Web Audio API (osciladores
-simples), nenhum arquivo de áudio — evita ter que embutir/licenciar um
-asset de som. Os quatro (`playChime` da dica, `playBounceThud` da batida
-na parede, `playMoonToSunChime` da lua virando sol, `playMenuPop` do
-botão direito) têm o mesmo "ar" cozy de propósito, através de duas peças
-compartilhadas em `renderer.js`:
+Every sound in the app is synthesized on the spot with the Web Audio API
+(simple oscillators), no audio files — avoids having to bundle/license a
+sound asset. The four (`playChime` for the tip, `playBounceThud` for the
+wall bounce, `playMoonToSunChime` for the moon turning into the sun,
+`playMenuPop` for the right-click) share the same cozy feel on purpose,
+through two shared pieces in `renderer.js`:
 
-- `warmDestination(ctx, cutoff)` — um `BiquadFilter` passa-baixa por onde
-  todo som passa antes do alto-falante. Onda triangular sozinha tem
-  harmônicos agudos que soam "sintético"; o filtro tira essa aspereza.
-- `playWarmNote(ctx, dest, freq, opts)` — uma nota = triangle (corpo) +
-  sine uma oitava acima bem baixinho (brilho suave), os dois passando
-  pelo `warmDestination`. Usada pelo chime da dica, o toque de "marimba"
-  da batida (nota sorteada entre G4/A4/B4/C5, tipo sino de vento) e o
-  puf de transformação — cada um só muda frequência/duração/volume.
+- `warmDestination(ctx, cutoff)` — a low-pass `BiquadFilter` every sound
+  passes through before the speaker. A triangle wave on its own has
+  sharp harmonics that sound "synthetic"; the filter takes that edge off.
+- `playWarmNote(ctx, dest, freq, opts)` — one note = triangle (body) +
+  a sine an octave up, very quiet (soft shimmer), both going through
+  `warmDestination`. Used by the tip's chime, the bounce's "marimba"
+  touch (a note picked at random among G4/A4/B4/C5, like a wind chime)
+  and the transformation puff — each one just changes
+  frequency/duration/volume.
 
-O `playMenuPop` fica de fora do `playWarmNote` de propósito: é pra ser
-curto e discreto (pedido explícito — "bem sutil e seco"), então é só um
-osc/gain direto, mas ainda passando pelo mesmo `warmDestination` pra não
-destoar dos outros três.
+`playMenuPop` is left out of `playWarmNote` on purpose: it's meant to be
+short and discreet (an explicit request — "very subtle and dry"), so it's
+just a plain osc/gain, but it still goes through the same
+`warmDestination` so it doesn't clash with the other three.
 
-O volume do toque da batida (não o tom) escala com a força do impacto
-(`speed` mandado por `flingTick`). `settings.muted` (menu → 🔇/🔊) desliga
-os quatro; a troca é avisada na hora por `mute-changed`, igual ao idioma.
+The bounce sound's volume (not its pitch) scales with the impact's force
+(`speed`, sent by `flingTick`). `settings.muted` (menu → 🔇/🔊) turns off
+all four; the change is broadcast on the spot via `mute-changed`, same
+as the language.
 
-## Atualização automática (`electron-updater`)
+## Auto-update (`electron-updater`)
 
-`initAutoUpdater()` só roda com `app.isPackaged` (a versão instalada) —
-em `npm start` não tem feed de update nenhum pra checar, e tentar checar
-sem isso só geraria erro. Ao abrir, espera 15s (não atrapalhar a
-inicialização) e checa uma vez; o resto do ciclo de vida é
-"instale sozinho": `autoDownload` e `autoInstallOnAppQuit` ficam ligados,
-então se o usuário não clicar em nada, a atualização baixa em segundo
-plano e instala na próxima vez que o app fechar normalmente.
+`initAutoUpdater()` only runs with `app.isPackaged` (the installed
+version) — in `npm start` there's no update feed to check at all, and
+trying to check without one would just produce an error. On opening, it
+waits 15s (so it doesn't get in the way of startup) and checks once; the
+rest of the lifecycle is "install on its own": `autoDownload` and
+`autoInstallOnAppQuit` stay on, so if the user doesn't click anything,
+the update downloads in the background and installs the next time the
+app closes normally.
 
-O popup (`renderer/update-prompt.html`, mesmo padrão de janela das outras
-janelas secundárias — nasce ao aparecer, morre ao fechar, ancorada acima
-do sol) só aparece em duas situações: quando o download termina
-(`update-downloaded`, sempre, com botões "Atualizar agora" / "Depois") ou
-quando a checagem foi manual (menu → "Buscar atualização") e não achou
-nada de novo, achou o mesmo de sempre um erro, ou rodou fora do app
-instalado — a flag `manualUpdateCheck` é o que distingue "checagem
-silenciosa que não achou nada" (não avisa) de "a pessoa pediu pra checar"
-(sempre avisa alguma coisa, mesmo que seja "já está atualizado").
+The popup (`renderer/update-prompt.html`, the same window pattern as the
+other secondary windows — born when it shows up, dies when it closes,
+anchored above the sun) only shows up in two situations: when the
+download finishes (`update-downloaded`, always, with "Update now" /
+"Later" buttons) or when the check was manual (menu → "Check for
+updates") and found nothing new, found the same error as always, or ran
+outside the installed app — the `manualUpdateCheck` flag is what tells
+apart "a silent check that found nothing" (doesn't say anything) from
+"the person asked to check" (always shows something, even if it's
+"you're already up to date").
 
-O feed de atualização é o Releases do próprio repositório GitHub
-(`build.publish` em `package.json`, provider `github`) — não tem
-servidor próprio nem infraestrutura extra. Ver [README.md](README.md)
-pra como publicar uma versão nova (`npm run release`, precisa de
-`GH_TOKEN`).
+The update feed is the GitHub repository's own Releases
+(`build.publish` in `package.json`, provider `github`) — no server or
+extra infrastructure of its own. See [README.md](README.md) for how to
+publish a new version (`npm run release`, needs `GH_TOKEN`).
 
-## Relatar um bug
+## Reporting a bug
 
-"🐛 Relatar um bug" no menu (`reportBug()` em `main.js`) não manda nada
-sozinho — monta o link de uma issue nova no GitHub já preenchida
-(versão do app via `app.getVersion()`, SO, idioma) e abre no navegador
-padrão com `shell.openExternal()`; quem relata ainda revisa e clica em
-"Submit" lá.
+"🐛 Report a bug" in the menu (`reportBug()` in `main.js`) doesn't send
+anything on its own — it builds the link for a new GitHub issue already
+filled in (the app's version via `app.getVersion()`, OS, language) and
+opens it in the default browser with `shell.openExternal()`; whoever's
+reporting still reviews it and clicks "Submit" there.
 
-## Iniciar com o Windows
+## Starting with Windows
 
-`registerAutoLaunch()` só faz efeito na versão instalada (`app.isPackaged`
-— em modo dev, `process.execPath` aponta pro `electron.exe` do
-`node_modules`, não pro app de verdade, e registrar isso na inicialização
-do Windows não faria sentido nenhum). O valor em si (`settings.autoLaunch`,
-`true` por padrão) é lido e salvo normalmente também em dev — só o
-`app.setLoginItemSettings()` de fato é pulado. O menu chama
-`registerAutoLaunch()` de novo a cada troca, pra aplicar na hora.
+`registerAutoLaunch()` only takes effect on the installed version
+(`app.isPackaged` — in dev mode, `process.execPath` points to the
+`electron.exe` inside `node_modules`, not the real app, and registering
+that for Windows startup wouldn't make any sense). The value itself
+(`settings.autoLaunch`, `true` by default) is read and saved normally in
+dev too — only the actual `app.setLoginItemSettings()` call is skipped.
+The menu calls `registerAutoLaunch()` again on every toggle, to apply it
+right away.
 
-## Ícone
+## Icon
 
-`build/icon.png` (1024×1024, fundo transparente) é o próprio emoji 🌞
-desenhado num `<canvas>` e exportado via `toDataURL()` — não é um asset
-de terceiros, é gerado a partir do mesmo emoji que o app usa. Serve pra
-duas coisas: o `electron-builder` converte ele automaticamente pro `.ico`
-do instalador/atalhos (`build.win.icon` em `package.json`; é assim que
-o ícone aparece no `.exe`, no menu iniciar e na área de trabalho), e a
-janela do sol usa o mesmo arquivo direto (`icon:` no `BrowserWindow`) pra
-ficar consistente também em modo desenvolvimento (Alt+Tab, gerenciador de
-tarefas) — mesmo com `skipTaskbar: true` não aparecendo na barra de
-tarefas normalmente.
+`build/icon.png` (1024×1024, transparent background) is the 🌞 emoji
+itself drawn on a `<canvas>` and exported via `toDataURL()` — not a
+third-party asset, it's generated from the same emoji the app uses. It
+serves two purposes: `electron-builder` automatically converts it to the
+installer/shortcuts' `.ico` (`build.win.icon` in `package.json`; that's
+how the icon shows up on the `.exe`, the start menu and the desktop), and
+the sun's window uses the same file directly (`icon:` on the
+`BrowserWindow`) so it's consistent in development mode too (Alt+Tab,
+task manager) — even though it doesn't normally show up in the taskbar
+thanks to `skipTaskbar: true`.
 
-Um detalhe de exportar via `<canvas>` em vez de `capturePage()`: a
-segunda não preserva transparência (devolve fundo branco sólido mesmo
-com a janela `transparent: true`), o canvas sim.
+One detail about exporting via `<canvas>` instead of `capturePage()`: the
+latter doesn't preserve transparency (it returns a solid white background
+even with the window set to `transparent: true`), the canvas does.
 
-## Scripts npm
+## npm scripts
 
-- `npm start` — roda em modo desenvolvimento (`electron .`)
-- `npm run pack` — build sem instalador, só a pasta descompactada
-  (`dist/win-unpacked/`), útil pra testar rápido
-- `npm run build` — gera o instalador Windows (`dist/Solzinho Setup *.exe`),
-  sem publicar
-- `npm run release` — gera o instalador e publica como Release no GitHub
-  (precisa de `GH_TOKEN`); é isso que os usuários instalados recebem
-  como atualização
+- `npm start` — runs in development mode (`electron .`)
+- `npm run pack` — builds without an installer, just the unpacked folder
+  (`dist/win-unpacked/`), useful for testing quickly
+- `npm run build` — generates the Windows installer
+  (`dist/Solzinho Setup *.exe`), without publishing
+- `npm run release` — generates the installer and publishes it as a
+  GitHub Release (needs `GH_TOKEN`); that's what installed users receive
+  as an update

@@ -1,257 +1,267 @@
 # Changelog
 
-Registro do que foi construído, em ordem cronológica. Este projeto não usa
-versionamento semântico ainda (é uso pessoal); as entradas marcam marcos de
-funcionalidade, não releases.
+A record of what's been built, in chronological order. This project
+doesn't use semantic versioning yet (it's for personal use); entries mark
+feature milestones, not releases.
 
-## Primeira versão
+## First version
 
-- Mascote de desktop em Electron: sol transparente, sempre por cima,
-  andando pela parte de baixo da tela, com pausas de "respirar" aleatórias.
-- Bolha de dica com mensagens baseadas em técnicas de psicologia
-  (respiração, grounding 5-4-3-2-1, autocompaixão, reestruturação
-  cognitiva), num ritmo configurável.
-- Clique no sol pede uma dica na hora; botão direito abre menu (pausar
-  dicas, frequência, parar/retomar caminhada, fechar).
+- Desktop mascot in Electron: transparent sun, always on top, walking
+  along the bottom of the screen, with random "breathing" pauses.
+- Tip bubble with messages based on psychology techniques (breathing,
+  5-4-3-2-1 grounding, self-compassion, cognitive reframing), on a
+  configurable rhythm.
+- Clicking the sun asks for a tip on the spot; right-click opens the menu
+  (pause tips, frequency, stop/resume walking, close).
 
-## Arrastar o sol
+## Dragging the sun
 
-- Primeira tentativa com `-webkit-app-region: drag` nativo quebrou clique
-  e botão direito (o Windows intercepta como barra de título). Trocado por
-  arraste manual via IPC (`mousedown`/`mousemove` no renderer, `setBounds`
-  no main process).
-- Corrigido depois: o arraste não tinha limite nenhum e dava pra perder o
-  sol fora da tela — travado dentro da área útil do monitor.
-- Corrigido de novo: o limite era aplicado à janela (bem maior que o sol,
-  por causa do espaço do balão), então o sol parava longe da borda real.
-  Agora o limite é aplicado ao sol visível, no monitor onde ele está, e o
-  sol se afasta da borda só na hora de mostrar o balão.
+- The first attempt with native `-webkit-app-region: drag` broke click
+  and right-click (Windows intercepts it as a title bar). Replaced with
+  manual dragging over IPC (`mousedown`/`mousemove` in the renderer,
+  `setBounds` in the main process).
+- Fixed later: dragging had no limit at all and the sun could be lost off
+  screen — locked to the monitor's usable area.
+- Fixed again: the limit was applied to the window (much bigger than the
+  sun, because of the bubble's space), so the sun would stop far from the
+  real edge. Now the limit is applied to the visible sun, on whichever
+  monitor it's on, and the sun only moves away from the edge when it's
+  time to show the bubble.
 
-## Múltiplos monitores
+## Multiple monitors
 
-- Corrigido: ao arrastar pra um monitor com outra escala (ex.: 100% → 150%)
-  o sol ficava parado e não dava mais pra mover. Eram três causas: as
-  coordenadas do mouse vindas da janela ficam erradas entre escalas
-  diferentes (agora o cursor é lido direto do sistema), o "soltei o botão"
-  podia se perder (agora o arraste também termina se o botão não estiver
-  mais pressionado), e o arredondamento do Windows engolia o passo de
-  ~1px da caminhada (agora a posição é guardada pelo app).
-- Corrigido: depois de levar o sol pra um monitor com outra escala, ele
-  andava mas não dava mais pra clicar nem arrastar. A detecção de "mouse em
-  cima do sol" dependia do repasse de mouse do Windows, que informa a
-  posição errada nesses monitores; agora o app mesmo confere o cursor.
-- Corrigido (de novo): mesmo com o cursor sendo lido certo, depois de
-  levar o sol pro monitor de 150% não dava pra agarrar ele. A causa era um
-  bug do Electron/Windows: a janela levada pra um monitor com outra escala
-  perde o "apertei o botão" do mouse. Um redimensionamento de 1px ao trocar
-  de monitor faz a janela voltar a receber o clique.
-- Corrigido: clicar no sol encostado numa borda fazia ele "pular" pra
-  dentro (pra abrir espaço pro balão). O balão agora tem janela própria e
-  se posiciona sozinho — abaixo do sol se não houver espaço em cima, ou
-  deslocado pro lado na borda. O sol fica sempre onde você deixou.
-- Corrigido: depois de abrir o menu uma vez, abrir de novo podia falhar (o
-  menu antigo, ao terminar de fechar, "desligava" o novo).
-- Funciona com todos os monitores de quem estiver usando: dá pra arrastar
-  o sol pra qualquer um. Andando sozinho ele fica no monitor onde está —
-  só troca de tela quando arrastado.
-- Monitor desconectado ou mudança de resolução/escala com o app aberto:
-  o sol volta pro monitor mais próximo.
+- Fixed: dragging to a monitor with a different scale (e.g. 100% → 150%)
+  left the sun stuck, unable to move anymore. There were three causes:
+  mouse coordinates coming from the window are wrong across different
+  scales (the cursor is now read straight from the system), "I released
+  the button" could get lost (dragging now also ends if the button isn't
+  pressed anymore), and Windows' rounding was swallowing the ~1px step of
+  the walk (position is now tracked by the app itself).
+- Fixed: after moving the sun to a monitor with a different scale, it
+  would walk but could no longer be clicked or dragged. Detecting "mouse
+  over the sun" depended on Windows' mouse forwarding, which reports the
+  wrong position on those monitors; the app now checks the cursor itself.
+- Fixed (again): even with the cursor being read correctly, after moving
+  the sun to the 150% monitor it couldn't be grabbed. The cause was an
+  Electron/Windows bug: a window moved to a monitor with a different
+  scale loses the mouse's "button pressed" state. A 1px resize when
+  switching monitors makes the window start receiving clicks again.
+- Fixed: clicking the sun right up against an edge made it "jump" inward
+  (to make room for the bubble). The bubble now has its own window and
+  positions itself — below the sun if there's no room above, or shifted
+  to the side at the edge. The sun always stays exactly where you left
+  it.
+- Fixed: after opening the menu once, opening it again could fail (the
+  old menu, once it finished closing, would "turn off" the new one).
+- Works with every monitor whoever's using it has: the sun can be dragged
+  to any of them. Walking on its own, it stays on whichever monitor it's
+  on — it only switches screens when dragged.
+- Monitor disconnected, or a resolution/scale change, with the app open:
+  the sun goes back to the nearest monitor.
 
-## Visual e feedback
+## Visuals and feedback
 
-- Redesenho do balão de dica (estava sendo cortado pela janela) e do
-  brilho ao redor do sol quando fala (SVG com raios girando + glow
-  pulsante, ajustado de tamanho algumas vezes até ficar colado ao sol).
-- Animação de "fala" (squash-and-stretch) enquanto a dica está na tela, no
-  lugar da animação de caminhada que continuava tocando por baixo.
-- Som sintetizado (Web Audio API, sem arquivo de áudio) tocando junto com
-  a dica.
-- Animação de entrada do balão com efeito elástico (bounce).
-- Bounce ao clicar no sol (achata, estica pra cima e assenta).
+- Redesigned the tip bubble (it was being clipped by the window) and the
+  glow around the sun while talking (an SVG with spinning rays + a
+  pulsing glow, resized a few times until it hugged the sun).
+- A "talking" animation (squash-and-stretch) while the tip is on screen,
+  in place of the walking animation that kept playing underneath.
+- Synthesized sound (Web Audio API, no audio file) playing along with
+  the tip.
+- Bubble entrance animation with a bouncy/elastic effect.
+- A bounce when clicking the sun (squashes, stretches up and settles).
 
-## Menu customizado
+## Custom menu
 
-- Trocado o menu nativo do botão direito (estilo do Windows) por um menu
-  HTML próprio, com a mesma identidade visual do balão — permitiu corrigir
-  também um bug real do menu nativo (a opção "Personalizado" aparecia
-  marcada assim que clicada, antes mesmo de confirmar, por comportamento
-  padrão do rádio nativo do Windows).
-- Frequência personalizada: janela dedicada pra digitar o intervalo em
-  minutos.
-- Corrigido bug de ancoragem: menu e janela de frequência estavam sendo
-  posicionados a partir do topo da janela invisível do sol (bem maior, pra
-  caber a bolha), não do sol visível — ficavam longe dele.
-- Ambos passaram a acompanhar o sol em tempo real se ele for arrastado
-  enquanto estão abertos.
-- Corrigido bug de pausa: o ciclo de "parada aleatória" e a bolha de dica
-  usavam a mesma variável de pausa que o menu/popup, então o ciclo de
-  idle podia "destravar" a caminhada com um popup ainda aberto. Resolvido
-  com múltiplos motivos de pausa independentes (`pauseReasons`).
-- Barra de rolagem indevida no menu: faltava `overflow: hidden` no
-  `html`/`body` dessa janela (diferente da janela principal).
+- Replaced the native right-click menu (Windows style) with its own HTML
+  menu, sharing the bubble's visual identity — this also let us fix a
+  real bug in the native menu (the "Custom" option would show as checked
+  the moment it was clicked, before even confirming, because of the
+  native Windows radio button's default behavior).
+- Custom frequency: a dedicated window to type the interval in minutes.
+- Fixed an anchoring bug: the menu and the frequency window were being
+  positioned from the top of the sun's invisible window (much taller, to
+  fit the bubble), not the visible sun — they ended up far from it.
+- Both now follow the sun in real time if it's dragged while they're
+  open.
+- Fixed a pause bug: the "random stop" cycle and the tip bubble used the
+  same pause variable as the menu/popup, so the idle cycle could "unlock"
+  walking with a popup still open. Solved with multiple independent pause
+  reasons (`pauseReasons`).
+- An unwanted scrollbar in the menu: `overflow: hidden` was missing on
+  that window's `html`/`body` (unlike the main window).
 
-## Exercício de respiração
+## Breathing exercise
 
-- Novo item de menu: exercício de respiração guiada (quadrada, 4-4-4-4,
-  4 ciclos), com o sol "respirando" em escala sincronizada com o texto da
-  fase atual.
-- Contagem regressiva de 3s ("Prepare-se…") antes do ciclo começar de
-  verdade.
-- Clicar no sol durante o exercício agora também o encerra (antes só
-  funcionava clicando no painel de texto).
-- Dicas que "quiserem" aparecer durante o exercício esperam ele terminar,
-  reaproveitando o mesmo mecanismo de dica pendente.
+- New menu item: a guided breathing exercise (box breathing, 4-4-4-4, 4
+  cycles), with the sun "breathing" at a scale synced to the current
+  phase's text.
+- A 3s countdown ("Get ready…") before the cycle actually starts.
+- Clicking the sun during the exercise now also ends it (before, that
+  only worked by clicking the text panel).
+- Tips that "want" to show up during the exercise wait for it to finish,
+  reusing the same pending-tip mechanism.
 
-- O sol vira lua no modo respiração: durante a contagem regressiva ele
-  rodopia e encolhe enquanto uma lua 🌛 com brilho azulado surge; é a lua
-  que respira; no fim ela volta a ser sol.
-- A transição virou um eclipse de verdade: a lua 🌚 emerge de trás do sol,
-  dá uma volta completa de 360° orbitando na frente dele (sol sempre
-  visível) e fecha a volta cobrindo o sol exatamente — eclipse total, com
-  a lua escurecendo um pouco e a coroa solar (só o anel, sem os raios
-  girando, bem mais colada na lua) visível ao redor. A volta pra sol é a
-  mesma órbita ao contrário.
-- Arremesso com física: soltar o sol em movimento continua o movimento
-  dele, indo mais devagar aos poucos e quicando nas bordas da tela, até
-  parar sozinho. Pegar ele de novo no meio do arremesso cancela.
-- Enquanto está sendo arremessado, o sol fica com uma cara de tonto (😵) e
-  o brilho ao redor pulsa bem sutil (encolhe um pouco e volta) girando
-  bem devagar. Ao parar sozinho, volta ao normal na hora, sem transição.
-- Corrigido: durante o arremesso o sol ficava sem nenhuma animação de
-  corpo (só a respiração parada do idle, quase imperceptível em
-  movimento). Agora ele balança/gira enquanto voa.
-- Som ao clicar na lua (ou no balão) pra encerrar a respiração — um "puf"
-  de transformação de volta pra sol.
-- Pedir uma dica pelo menu durante o exercício de respiração não espera
-  mais ele acabar sozinho: encerra na hora, com a mesma animação da lua
-  virando sol de volta, e a dica aparece assim que a transição termina.
-- Bounce ao clicar no sol (achata e volta ao normal).
-- Batida na parede durante o arremesso: o sol "amassa" na hora do impacto
-  (esguicha pro lado contrário e volta) e toca um "boing" curto cujo
-  volume acompanha a força da batida.
-- Opção "Mutar/Ativar sons" no menu, desliga o tin-tin-tin da dica e o
-  boing da batida.
-- Corrigido: o brilho ao redor do sol (raios + glow) ficava com uma
-  "máscara" cortando a borda no pico do pulso — o `<svg>` corta o próprio
-  desenho por padrão e o pulso passava um pouco do limite dele.
+- The sun turns into the moon in breathing mode: during the countdown it
+  spins and shrinks while a moon 🌛 with a bluish glow appears; it's the
+  moon that breathes; at the end it turns back into the sun.
+- The transition became a real eclipse: the moon 🌚 emerges from behind
+  the sun, does a full 360° loop orbiting in front of it (the sun always
+  visible) and closes the loop by covering the sun exactly — a total
+  eclipse, with the moon darkening a bit and the solar corona (just the
+  ring, without the rays spinning, hugging the moon much more closely)
+  visible around it. Turning back into the sun is the same orbit in
+  reverse.
+- Fling with physics: releasing the sun while it's moving keeps the
+  motion going, gradually slowing down and bouncing off the screen's
+  edges, until it stops on its own. Grabbing it again mid-fling cancels
+  it.
+- While being flung, the sun gets a dizzy face (😵) and the glow around
+  it pulses very subtly (shrinks a bit and back), spinning very slowly.
+  When it stops on its own, it goes back to normal right away, with no
+  transition.
+- Fixed: during the fling, the sun had no body animation at all (just
+  idle's still breathing, barely noticeable while moving). Now it
+  wobbles/spins while flying.
+- A sound when clicking the moon (or the bubble) to end the breathing —
+  a "puff" of transforming back into the sun.
+- Asking for a tip from the menu during the breathing exercise no longer
+  waits for it to end on its own: it ends right away, with the same
+  animation of the moon turning back into the sun, and the tip shows up
+  as soon as the transition finishes.
+- A bounce when clicking the sun (squashes and returns to normal).
+- Hitting the wall during the fling: the sun "squashes" right at the
+  moment of impact (stretches toward the opposite side and back) and
+  plays a short "boing" whose volume matches the force of the hit.
+- A "Mute/Unmute sounds" option in the menu, turns off the tip's chime
+  and the bounce's boing.
+- Fixed: the glow around the sun (rays + glow) had a "mask" clipping its
+  edge at the peak of the pulse — the `<svg>` clips its own drawing by
+  default, and the pulse went slightly past its boundary.
 
-## Dois ritmos de dica
+## Two tip rhythms
 
-- Separado um segundo ciclo de dicas, independente do de "acalmar":
-  lembretes de pausa física (beber água, esticar, levantar), com sua
-  própria frequência e conjunto de mensagens.
+- Split off a second tip cycle, independent from the "calming" one:
+  physical break reminders (drink water, stretch, stand up), with their
+  own frequency and set of messages.
 
-## Idioma
+## Language
 
-- Suporte a português e inglês em toda a interface (menu, janela de
-  frequência, fases da respiração) e nas duas listas de dicas, trocável
-  por duas bandeirinhas (🇧🇷/🇺🇸) no menu, sem precisar reiniciar o app.
+- Support for Portuguese and English throughout the whole interface
+  (menu, frequency window, breathing phases) and in both tip lists,
+  switchable with two little flags (🇧🇷/🇺🇸) in the menu, with no need to
+  restart the app.
 
-## Empacotamento e distribuição
+## Packaging and distribution
 
-- `electron-builder` configurado para gerar um instalador Windows (NSIS,
-  por usuário, sem precisar de admin).
-- Auto-início no login do Windows via `app.setLoginItemSettings`, ativo
-  apenas na versão instalada (não no modo desenvolvimento).
-- Licenciado sob os mesmos termos do projeto [Meridian](https://github.com/wallasace/meridian)
-  do mesmo autor: PolyForm Internal Use License 1.0.0 (source-available,
-  uso pessoal/interno livre, uso comercial sob licença separada).
+- `electron-builder` set up to generate a Windows installer (NSIS,
+  per-user, no admin needed).
+- Auto-start at Windows login via `app.setLoginItemSettings`, active only
+  in the installed version (not in development mode).
+- Licensed under the same terms as the same author's
+  [Meridian](https://github.com/wallasace/meridian) project: PolyForm
+  Internal Use License 1.0.0 (source-available, free for personal/
+  internal use, commercial use under a separate license).
 
-## Atualização automática
+## Auto-update
 
-- Botão "Buscar atualização" no menu, e checagem silenciosa sozinha ao
-  abrir (só na versão instalada). Quando acha uma atualização, baixa
-  sozinha e avisa com um popup ("Atualizar agora" reinicia na hora,
-  "Depois" instala na próxima vez que o app fechar normalmente).
-- `npm run release` builda e publica o instalador direto como Release no
-  GitHub — é o feed que a versão instalada consulta.
-- Botão "Relatar um bug" no menu: abre uma issue nova no GitHub já
-  preenchida com versão, sistema e idioma (não manda nada sozinho — só
-  prepara, a pessoa ainda revisa e envia).
-- Som ao abrir o menu (botão direito): um pop bem curto e seco.
-- Ícone do app (instalador, atalhos, .exe): o próprio emoji 🌞, gerado
-  num canvas a partir dele mesmo, em vez do ícone padrão do Electron.
-- Opção no menu pra escolher se o solzinho inicia com o Windows ou não
-  (antes era sempre ligado, sem jeito de desativar pelo próprio app).
-- Corrigido: o arremesso parava de repente com o sol ainda visivelmente
-  em movimento. Agora a reta final freia mais forte (~0,5s) até quase
-  zero, um final suave em vez de um corte seco.
-- Som da batida na parede trocado: em vez do boing/clique seco de antes,
-  um toque de marimba quentinho (nota sorteada + harmônico suave, sem
-  aspereza nenhuma).
-- Todos os 4 sons do app (dica, batida, transformação, menu) unificados
-  no mesmo "ar" cozy — mesma receita de filtro passa-baixa + onda
-  triangular quentinha, em vez de cada um soar diferente.
+- A "Check for updates" button in the menu, and a silent check on its own
+  when opening (installed version only). When it finds an update, it
+  downloads on its own and shows a popup ("Update now" restarts right
+  away, "Later" installs the next time the app closes normally).
+- `npm run release` builds and publishes the installer straight to
+  GitHub as a Release — that's the feed the installed version checks.
+- A "Report a bug" button in the menu: opens a new GitHub issue already
+  filled in with the version, OS and language (doesn't send anything on
+  its own — just prepares it, the person still reviews and submits it).
+- A sound when opening the menu (right-click): a very short, dry pop.
+- The app's icon (installer, shortcuts, .exe): the 🌞 emoji itself,
+  generated on a canvas from the emoji, instead of Electron's default
+  icon.
+- A menu option to choose whether solzinho starts with Windows or not
+  (before, it was always on, with no way to turn it off from the app
+  itself).
+- Fixed: the fling used to stop abruptly with the sun still visibly
+  moving. Now the final stretch brakes harder (~0.5s) down to almost
+  zero, a smooth ending instead of an abrupt cut.
+- Changed the wall-bounce sound: instead of the previous dry boing/click,
+  a cozy marimba touch (a random note + a soft harmonic, with no
+  harshness at all).
+- Unified all 4 of the app's sounds (tip, bounce, transformation, menu)
+  with the same cozy feel — the same low-pass filter + warm triangle wave
+  recipe, instead of each one sounding different.
 
-## Boca, indicadores de menu e ajustes de arremesso/respiração
+## Mouth, menu indicators, and fling/breathing adjustments
 
-- O sol agora "mexe a boca" (um óvalo pequeno sobreposto ao rosto do
-  emoji, abrindo e fechando rápido) enquanto está mostrando uma dica.
-- As opções de estado persistente no menu (pausar dicas, caminhada, sons,
-  iniciar com o Windows) ganharam um indicador visual de ligado/desligado,
-  em vez de só trocar o texto do verbo.
-- Sendo arrastado ou voando livre depois do arremesso, o sol agora tem uma
-  cara de "weeeee" (antes só ficava com a cara de tonto durante o
-  arremesso, e nada de especial durante o arraste). A cara de tonto virou
-  uma reação rápida só no instante de bater numa borda, voltando sozinha
-  pro "weeeee" logo em seguida.
-- Simplificada a transformação sol/lua do exercício de respiração: em vez
-  da lua orbitando o sol, agora é só a lua surgindo pequena e crescendo
-  com um bounce no final (e o sol encolhendo/sumindo ao mesmo tempo) —
-  e o mesmo movimento ao contrário na volta.
-- Ao terminar o exercício (por clique ou pelo tempo acabar), o balão
-  convida a repetir ("toque para respirar de novo", em destaque); tocando
-  nele, a contagem regressiva começa de novo. Se ninguém tocar, volta ao
-  normal sozinho depois de alguns segundos.
-- Balão de pausa física (água/alongar) ganhou cor própria (verde-água),
-  diferente do âmbar das dicas de acalmar — identidade visual pra
-  diferenciar os dois tipos de lembrete de cara.
-- Centralizado o texto das bandeirinhas de idioma (BR/US) no menu —
-  estava levemente descentralizado dentro do retângulo do botão.
-- Corrigido: com o menu aberto, se o sol se movesse (arraste ou quique de
-  arremesso) até a área do menu, ficava escondido atrás dele — o menu,
-  diferente do balão, rouba o topo da pilha de janelas ao abrir. Agora o
-  sol volta pro topo sempre que se reposiciona com um popup aberto.
-- Corrigido: na transformação sol/lua, os raios do sol (silhueta pontuda)
-  apareciam espiando por trás da lua (redonda) no meio da animação,
-  quando os dois encolhiam/cresciam ao mesmo tempo. Agora é sequencial —
-  quem desaparece encolhe primeiro, só depois quem aparece cresce — sem
-  nenhuma sobreposição entre os dois.
-- Removido o brilho (corona) que ficava atrás do sol ao voltar da
-  respiração (`moon-exit`) — não fazia mais sentido com a transformação
-  simplificada; continua ligado normalmente durante o modo lua/respiração
-  e ao dar uma dica.
-- Boca de fala aumentada e com mais contraste — a versão anterior era
-  pequena/clara demais e quase não dava pra perceber no tamanho real.
-- Novo item de menu (só ícone, 🕶️): coloca/tira óculos escuros no sol,
-  no formato Wayfarer clássico ("estilo Ray-Ban").
-- Corrigido bug real: trocar a cara do sol (`sunEl.textContent = ...`)
-  apagava os filhos do `#sun` — a boca e os óculos desapareciam de vez
-  toda vez que o arremesso mudava a cara dele. O rosto agora vive num
-  `<span>` próprio, sem mexer nos irmãos.
-- Arremesso ganhou graus de empolgação conforme a velocidade atual (não
-  só uma cara de "weeeee" fixa o tempo todo): rápido é a cara e o balanço
-  cheios; mais devagar é um balanço bem mais discreto, cara normal; perto
-  de já ter parado, a animação de idle/caminhada volta sozinha antes
-  mesmo do arremesso terminar de vez.
-- Respiração da lua com um pouco de squash-and-stretch (infla e sobe de
-  leve no "inspira", esvazia abaixo do normal e desce no "solta") em vez
-  de só um pulso uniforme de escala.
-- Transição sol/lua bem mais rápida (0,7s, era 1,8s) — tinha ficado
-  demorada demais depois da simplificação.
-- Ao parar de se mexer (arraste solto ou arremesso decaindo), uma
-  animação curta de "assentar" a rotação antes de voltar pro idle/
-  caminhada, em vez do corte seco que tinha antes.
-- Ajustes na boca: mais larga (cobre o sorriso do emoji por baixo por
-  inteiro, em vez de deixar um pedaço dele aparecendo do lado) e abre
-  bem menos que antes (estava exagerada). Também para de falar enquanto
-  está sendo arrastado/arremessado — os dois juntos interferiam.
-- Óculos escuros 35% maiores.
-- Corrigido: clicar no sol com as dicas pausadas ficava mudo (nenhuma
-  bolha aparece pra tocar o barulhinho de sempre). Agora toca o chime
-  direto nesse caso.
-- Óculos escuros voltam desligados por padrão numa instalação nova.
-- Enquanto busca atualização, a coroa solar gira rápido — um retorno
-  visual de "buscando", já que a checagem quase sempre não mostra popup
-  nenhum. Funciona também em modo desenvolvimento (simulado, já que não
-  existe autoUpdater de verdade sem uma instalação real).
+- The sun now "moves its mouth" (a small oval overlaid on the emoji's
+  face, opening and closing quickly) while showing a tip.
+- The menu's persistent-state options (pause tips, walking, sounds, start
+  with Windows) got a visual on/off indicator, instead of just swapping
+  the verb's text.
+- Being dragged or flying free after a fling, the sun now has a
+  "weeeee" face (before, it only had the dizzy face during the fling
+  itself, and nothing special while being dragged). The dizzy face
+  became a quick reaction just for the instant of hitting an edge,
+  going back to "weeeee" right after on its own.
+- Simplified the breathing exercise's sun/moon transformation: instead of
+  the moon orbiting the sun, it's now just the moon appearing small and
+  growing with a bounce at the end (and the sun shrinking/disappearing at
+  the same time) — and the same motion in reverse on the way back.
+- When the exercise ends (by click or time running out), the bubble
+  invites you to repeat it ("tap to breathe again", highlighted); tapping
+  it restarts the countdown. If no one taps it, it goes back to normal on
+  its own after a few seconds.
+- The physical-break bubble (water/stretch) got its own color
+  (mint green), different from the calming tips' amber — a visual
+  identity to tell the two kinds of reminder apart at a glance.
+- Centered the language flags' text (BR/US) in the menu — it was
+  slightly off-center inside the button's rectangle.
+- Fixed: with the menu open, if the sun moved (dragging or a fling
+  bounce) into the menu's area, it ended up hidden behind it — the menu,
+  unlike the bubble, steals the top of the window stack when it opens.
+  Now the sun goes back to the top whenever it repositions itself with a
+  popup open.
+- Fixed: in the sun/moon transformation, the sun's rays (a spiky
+  silhouette) would show up peeking from behind the moon (round) midway
+  through the animation, when both were shrinking/growing at the same
+  time. Now it's sequential — whoever's disappearing shrinks first, only
+  then does whoever's appearing grow — with no overlap between the two.
+- Removed the glow (corona) that used to stay behind the sun when coming
+  back from breathing (`moon-exit`) — it no longer made sense with the
+  simplified transformation; it stays on as usual during moon/breathing
+  mode and when giving a tip.
+- Made the talking mouth bigger and higher-contrast — the previous
+  version was too small/light and was almost impossible to notice at
+  real size.
+- New menu item (icon only, 🕶️): puts sunglasses on the sun, or takes
+  them off, in the classic Wayfarer shape ("Ray-Ban style").
+- Fixed a real bug: swapping the sun's face (`sunEl.textContent = ...`)
+  wiped out `#sun`'s children — the mouth and the sunglasses would
+  disappear for good every time the fling changed its face. The face now
+  lives in its own `<span>`, without touching its siblings.
+- The fling now has degrees of excitement depending on the current speed
+  (instead of one fixed "weeeee" face the whole time): fast is the full
+  face and wobble; slower is a much more discreet wobble, normal face;
+  close to having already stopped, the idle/walking animation comes back
+  on its own even before the fling actually finishes.
+- The moon's breathing now has a bit of squash-and-stretch (inflates and
+  rises slightly on the "inhale", deflates below normal and sinks on the
+  "exhale") instead of just a uniform scale pulse.
+- The sun/moon transition is much faster now (0.7s, was 1.8s) — it had
+  gotten too slow after the simplification.
+- When it stops moving (letting go of a drag, or a fling decaying down),
+  a short animation "settles" the rotation before going back to idle/
+  walking, instead of the abrupt cut it had before.
+- Mouth adjustments: wider (fully covers the emoji's smile underneath,
+  instead of leaving a piece of it showing on the side) and opens quite a
+  bit less than before (it was exaggerated). It also stops talking while
+  being dragged/flung — the two together interfered with each other.
+- Sunglasses made 35% bigger.
+- Fixed: clicking the sun with tips paused stayed silent (no bubble shows
+  up to play the usual little sound). Now it plays the chime directly in
+  that case.
+- Sunglasses default back to off on a fresh install.
+- While checking for an update, the solar corona spins fast — a visual
+  "searching" cue, since the check almost never shows any popup. Also
+  works in development mode (simulated, since there's no real
+  autoUpdater without a real installation).

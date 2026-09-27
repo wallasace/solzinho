@@ -1,147 +1,149 @@
 # Solzinho
 
-Um mascote de desktop: um solzinho (🌞) que anda pela sua tela, sempre por
-cima de todas as janelas, e de vez em quando aparece com uma dica curta pra
-te ajudar a se acalmar — baseada em técnicas de psicologia (respiração,
-grounding, autocompaixão, reestruturação cognitiva) — ou um lembrete de
-pausa física (água, esticar, levantar). Também tem um exercício de
-respiração guiado sob demanda.
+A desktop mascot: a little sun (🌞) that walks around your screen, always
+on top of every window, and every once in a while shows up with a short
+tip to help you calm down — based on psychology techniques (breathing,
+grounding, self-compassion, cognitive reframing) — or a physical break
+reminder (water, stretch, stand up). It also has an on-demand guided
+breathing exercise.
 
-Feito pra quem se preocupa demais e precisa de um empurrãozinho gentil de
-vez em quando, sem abrir mão da tela pra isso.
+Made for people who worry too much and need a gentle nudge every now and
+then, without giving up screen space for it.
 
-![plataforma](https://img.shields.io/badge/plataforma-Windows-blue)
-![licença](https://img.shields.io/badge/licença-PolyForm%20Internal%20Use%201.0.0-lightgrey)
+![platform](https://img.shields.io/badge/platform-Windows-blue)
+![license](https://img.shields.io/badge/license-PolyForm%20Internal%20Use%201.0.0-lightgrey)
 
-## Vendo ele em ação
+## Seeing it in action
 
 <table>
 <tr>
 <td width="50%">
 
-**Andando pela tela e dando uma dica**
-<br>Clique nele a qualquer momento pra pedir uma dica na hora.
+**Walking around and giving a tip**
+<br>Click it any time to ask for a tip on the spot.
 
-![Solzinho andando e mostrando uma dica ao ser clicado](docs/demo-andar-e-dica.gif)
+![Solzinho walking and showing a tip when clicked](docs/demo-andar-e-dica.gif)
 
 </td>
 <td width="50%">
 
-**Arraste e solte em movimento (física de verdade)**
-<br>Ele continua o movimento, quica na parede e desacelera suavemente.
+**Drag and release while moving (real physics)**
+<br>It keeps moving, bounces off the wall and eases to a smooth stop.
 
-![Solzinho sendo arremessado e quicando na parede](docs/demo-arremesso.gif)
+![Solzinho being flung and bouncing off the wall](docs/demo-arremesso.gif)
 
 </td>
 </tr>
 <tr>
 <td width="50%">
 
-**Exercício de respiração — eclipse**
-<br>A lua orbita o sol, cobre ele por completo e guia a respiração.
+**Breathing exercise**
+<br>The moon takes over and guides the breathing cycle.
 
-![Sol virando lua num eclipse durante o exercício de respiração](docs/demo-respiracao.gif)
+![Sun turning into the moon during the breathing exercise](docs/demo-respiracao.gif)
 
 </td>
 <td width="50%">
 
-**Menu e troca de idioma**
-<br>Botão direito abre o menu; as bandeiras trocam PT/EN na hora.
+**Menu and language switch**
+<br>Right-click opens the menu; the flags switch PT/EN instantly.
 
-![Menu do botão direito e troca de idioma entre português e inglês](docs/demo-menu-idioma.gif)
+![Right-click menu and switching language between Portuguese and English](docs/demo-menu-idioma.gif)
 
 </td>
 </tr>
 </table>
 
-## O que ele faz
+## What it does
 
-- **Anda pela tela**: fica sempre por cima das outras janelas, para de vez
-  em quando pra "respirar" (parado, animação de descanso), e pode ser
-  arrastado pra qualquer lugar com o mouse.
-- **Dicas de acalmar**: aparecem numa bolha de fala, num ritmo configurável
-  (padrão: a cada ~30 min, com variação aleatória).
-- **Lembretes de pausa física**: água, esticar, levantar — num ritmo próprio
-  e independente das dicas de acalmar (padrão: a cada ~20 min).
-- **Exercício de respiração guiado**: contagem regressiva de 3s, depois um
-  ciclo de respiração quadrada (inspira 4s / segura 4s / solta 4s / segura
-  4s × 4), com o próprio sol "respirando" em sincronia.
-- **Clique no sol**: pede uma dica na hora (ou encerra o exercício de
-  respiração, se estiver rolando um).
-- **Botão direito**: menu com pausar dicas, ajustar frequência (com opção
-  personalizada), parar/retomar a caminhada, pedir dica agora, iniciar o
-  exercício de respiração e trocar o idioma (🇧🇷/🇺🇸).
-- **Português e inglês**: toda a interface e as dicas têm as duas versões.
-- **Abre com o Windows**: quando instalado (veja abaixo), já inicia sozinho
-  no login.
+- **Walks around the screen**: always stays on top of other windows,
+  stops every now and then to "breathe" (idle rest animation), and can be
+  dragged anywhere with the mouse.
+- **Calming tips**: show up in a speech bubble, on a configurable rhythm
+  (default: every ~30 min, with random variation).
+- **Physical break reminders**: water, stretch, stand up — on its own
+  rhythm, independent from the calming tips (default: every ~20 min).
+- **Guided breathing exercise**: a 3s countdown, then a box-breathing
+  cycle (inhale 4s / hold 4s / exhale 4s / hold 4s × 4), with the sun
+  itself "breathing" in sync.
+- **Click the sun**: asks for a tip right away (or ends the breathing
+  exercise, if one is running).
+- **Right-click**: menu with pause tips, adjust frequency (with a custom
+  option), stop/resume walking, ask for a tip now, start the breathing
+  exercise, put on sunglasses, and switch language (🇧🇷/🇺🇸).
+- **Portuguese and English**: the whole interface and the tips have both
+  versions.
+- **Starts with Windows**: once installed (see below), it launches on its
+  own at login.
 
-## Como rodar
+## How to run it
 
-### Modo desenvolvimento
+### Development mode
 
 ```bash
 npm install
 npm start
 ```
 
-Ou dá duplo-clique em [`iniciar_solzinho.bat`](iniciar_solzinho.bat) pra
-abrir sem precisar de terminal.
+Or double-click [`iniciar_solzinho.bat`](iniciar_solzinho.bat) to open it
+without needing a terminal.
 
-### Instalador (recomendado para uso do dia a dia)
+### Installer (recommended for everyday use)
 
 ```bash
 npm run build
 ```
 
-Gera um instalador em `dist/Solzinho Setup <versão>.exe`. Rodando esse
-instalador, o Solzinho é instalado na sua conta de usuário (sem precisar de
-admin), ganha atalho no menu iniciar/desktop, e passa a abrir sozinho
-sempre que você liga o computador. Pra desligar isso, tem a opção
-"🚀 Não iniciar com o Windows" direto no menu (botão direito) do solzinho.
+Generates an installer at `dist/Solzinho Setup <version>.exe`. Running
+that installer, Solzinho is installed under your user account (no admin
+needed), gets a shortcut in the start menu/desktop, and starts on its own
+every time you turn on the computer. To turn that off, there's a
+"🚀 Don't start with Windows" option right in solzinho's (right-click)
+menu.
 
-### Atualização automática
+### Auto-update
 
-A versão instalada checa por atualização sozinha ao abrir (silenciosa —
-só avisa se achar uma nova versão pronta pra instalar) e tem um item
-"⬆️ Buscar atualização" no menu (botão direito) pra checar na hora.
-Quando uma atualização é baixada, aparece um aviso com "Atualizar agora"
-(reinicia e instala na hora) ou "Depois" (instala sozinha da próxima vez
-que o solzinho for fechado normalmente).
+The installed version checks for an update on its own when it opens
+(silently — it only shows something if it finds a new version ready to
+install) and has an "⬆️ Check for updates" item in the (right-click) menu
+to check on the spot. When an update is downloaded, a prompt shows up with
+"Update now" (restarts and installs right away) or "Later" (installs on
+its own the next time solzinho closes normally).
 
-Isso só funciona pra quem instalou pelo `.exe` gerado — não existe nada
-pra checar em `npm start`. Pra publicar uma versão que os usuários
-instalados vão receber:
+This only works for whoever installed it through the generated `.exe` —
+there's nothing to check in `npm start`. To publish a version that
+installed users will receive:
 
 ```bash
-# 1. suba a versão em package.json (ex.: 1.0.0 -> 1.0.1)
-# 2. gere um token do GitHub com permissão de "repo" em
-#    https://github.com/settings/tokens e exporte:
-export GH_TOKEN=seu_token_aqui
+# 1. bump the version in package.json (e.g. 1.0.0 -> 1.0.1)
+# 2. generate a GitHub token with "repo" permission at
+#    https://github.com/settings/tokens and export it:
+export GH_TOKEN=your_token_here
 
 npm run release
 ```
 
-Isso builda o instalador e publica ele como um Release em
+This builds the installer and publishes it as a Release on
 [github.com/wallasace/solzinho/releases](https://github.com/wallasace/solzinho/releases)
-— é ali (nos metadados que o `electron-builder` gera junto, `latest.yml`
-etc.) que a versão instalada vai olhar pra saber se tem algo novo.
+— that's where the installed version looks (at the metadata
+`electron-builder` generates alongside it, `latest.yml` etc.) to know if
+there's something new.
 
-## Estrutura
+## Structure
 
-Veja [ARCHITECTURE.md](ARCHITECTURE.md) para como o projeto é organizado
-por dentro (processos do Electron, canais de IPC, sistema de idiomas).
+See [ARCHITECTURE.md](ARCHITECTURE.md) for how the project is organized
+internally (Electron processes, IPC channels, the language system).
 
-Veja [CHANGELOG.md](CHANGELOG.md) para o histórico do que foi construído.
+See [CHANGELOG.md](CHANGELOG.md) for the history of what's been built.
 
-## Licença
+## License
 
-Solzinho é software de código aberto para leitura ("source-available"), não
-open source no sentido OSI. Uso pessoal, educacional e interno (seu ou da
-empresa onde você trabalha) é livre e gratuito. Vender, redistribuir ou
-embutir em um produto/serviço oferecido a terceiros precisa de uma licença
-comercial separada.
+Solzinho is source-available software, not open source in the OSI sense.
+Personal, educational and internal use (yours or your company's) is free.
+Selling, redistributing or embedding it in a product/service offered to
+third parties requires a separate commercial license.
 
-Veja [LICENSE](LICENSE) para os termos completos e [COMMERCIAL.md](COMMERCIAL.md)
-pra saber quando uma licença comercial é necessária e como pedir uma.
+See [LICENSE](LICENSE) for the full terms and [COMMERCIAL.md](COMMERCIAL.md)
+to know when a commercial license is needed and how to request one.
 
-Créditos de terceiros em [NOTICE](NOTICE).
+Third-party credits in [NOTICE](NOTICE).
