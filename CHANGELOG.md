@@ -212,3 +212,8 @@ funcionalidade, não releases.
   arremesso) até a área do menu, ficava escondido atrás dele — o menu,
   diferente do balão, rouba o topo da pilha de janelas ao abrir. Agora o
   sol volta pro topo sempre que se reposiciona com um popup aberto.
+- Corrigido: na transformação sol/lua, os raios do sol (silhueta pontuda)
+  apareciam espiando por trás da lua (redonda) no meio da animação,
+  quando os dois encolhiam/cresciam ao mesmo tempo. Agora é sequencial —
+  quem desaparece encolhe primeiro, só depois quem aparece cresce — sem
+  nenhuma sobreposição entre os dois.

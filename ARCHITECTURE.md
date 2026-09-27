@@ -70,6 +70,15 @@ um dos dois lados da transição, só trocando qual elemento recebe qual.
 Nesse instante a lua escurece um pouco (`filter: brightness(0.8)` em
 `#sun-wrap.breathing #moon`), simulando a sombra do eclipse.
 
+As duas `@keyframes` são **sequenciais, não simultâneas**: quem está
+desaparecendo segura o tamanho cheio até 45% e só aí encolhe rápido até
+sumir aos 50%; quem está aparecendo fica escondido até esses mesmos 50%
+e só depois cresce com o bounce. Bug corrigido: com as duas rodando ao
+mesmo tempo o 1,8s inteiro (crossfade "de verdade"), no meio da transição
+dava pra ver os raios do sol (silhueta pontuda, maior que o disco)
+espiando por trás da lua (redonda, menor naquele instante) — encolher e
+crescer em sequência, sem sobreposição, elimina isso de vez.
+
 O `#glow` (mesmo brilho de "dando uma dica") também liga durante a
 transformação, mas vira uma coroa bem mais colada na silhueta da lua:
 menor (76px em vez de 100px) e **sem os raios girando** (`#rays {

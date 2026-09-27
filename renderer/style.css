@@ -68,15 +68,25 @@ html, body {
 #rays {
   transform-box: view-box;
   transform-origin: 100px 100px;
+  /* se por algum motivo os raios ainda ligarem durante a troca sol/lua (ver
+     nota abaixo), pelo menos aparecem suavemente, como parte do efeito, em
+     vez de um corte seco */
+  transition: opacity 0.4s ease;
 }
 
-#sun-wrap.shining #rays {
+/* :not(...) pra nunca ligar os raios durante a troca sol/lua, mesmo se
+   `shining`/`weee` também estiverem presentes no `#sun-wrap` nesse instante
+   (ex.: uma dica pendente aparecendo bem na hora em que a lua ainda está
+   sumindo) — sem isso, os raios giravam o tempo todo por baixo, só não
+   apareciam por causa do `opacity:0` abaixo, mas em qualquer brecha de
+   timing entre as regras eles picavam à mostra */
+#sun-wrap.shining:not(.moon-mode):not(.breathing):not(.moon-exit) #rays {
   animation: ray-spin 6s linear infinite;
 }
 
 /* sendo arrastado ou voando livre: gira bem devagar, bem mais devagar que
    qualquer outro estado */
-#sun-wrap.weee #rays {
+#sun-wrap.weee:not(.moon-mode):not(.breathing):not(.moon-exit) #rays {
   animation: ray-spin 26s linear infinite;
 }
 
@@ -85,6 +95,7 @@ html, body {
 #sun-wrap.moon-mode #rays,
 #sun-wrap.breathing #rays,
 #sun-wrap.moon-exit #rays {
+  animation: none;
   opacity: 0;
 }
 
@@ -267,18 +278,28 @@ html, body {
   animation: shrink-out 1.8s ease-in-out forwards;
 }
 
-/* encolhe e some no mesmo lugar (usado por quem está desaparecendo) */
+/* fica visível em tamanho normal e só encolhe/some rápido na segunda
+   metade (usado por quem está desaparecendo) — segura o tamanho cheio até
+   os 45% de propósito, pra nunca encolher mais que quem está surgindo por
+   baixo ainda cresceu; sem essa folga, o sol (com raios, silhueta maior
+   que o disco) "espiava" por trás da lua enquanto os dois encolhiam/
+   cresciam ao mesmo tempo no meio da animação */
 @keyframes shrink-out {
   0%   { opacity: 1; transform: scale(1); }
+  45%  { opacity: 1; transform: scale(1); }
+  50%  { opacity: 0; transform: scale(0.15); }
   100% { opacity: 0; transform: scale(0.15); }
 }
 
-/* surge pequeno, cresce passando um pouco do tamanho normal e assenta com
-   um bounce (usado por quem está aparecendo) */
+/* fica escondido até quem está desaparecendo já ter sumido (mesmos 50% do
+   shrink-out, sem sobreposição entre os dois), só então surge pequeno,
+   cresce passando um pouco do tamanho normal e assenta com um bounce
+   (usado por quem está aparecendo) */
 @keyframes grow-in-bounce {
   0%   { opacity: 0;    transform: scale(0.15); }
-  65%  { opacity: 1;    transform: scale(1.15); }
-  82%  { opacity: 1;    transform: scale(0.94); }
+  50%  { opacity: 0;    transform: scale(0.15); }
+  80%  { opacity: 1;    transform: scale(1.15); }
+  92%  { opacity: 1;    transform: scale(0.94); }
   100% { opacity: 1;    transform: scale(1); }
 }
 
