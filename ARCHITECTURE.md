@@ -593,7 +593,11 @@ current monitor (unlike every other secondary window, it isn't anchored
 near the sun; it's meant to be read once, calmly, not glanced at), in
 whichever language is set, closed by its own button or Escape (not by
 losing focus, also unlike the others — reading takes longer than
-dismissing a quick prompt).
+dismissing a quick prompt). It also calls `show()`/`moveTop()`/`focus()`
+once its content is sent, instead of just relying on `alwaysOnTop` —
+without that, a real auto-update relaunch left it sitting unfocused on
+top of whatever already had focus, easy to miss right after a restart
+if that monitor isn't the one being looked at.
 
 `checkReleaseNotesOnStartup()` runs once per launch, 1.2s after
 `createWindow()` (so it doesn't compete with the sun's entrance

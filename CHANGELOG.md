@@ -346,3 +346,12 @@ feature milestones, not releases.
   in `renderer/release-notes-data.js`, kept separate from the main
   process so it only has to decide *whether* something changed, not list
   it.
+- The "what's new" window reported not showing up after a real
+  auto-update. Reproduced the full mechanism by hand (close the
+  installed app, relaunch it) and confirmed `checkReleaseNotesOnStartup`
+  does run and the window does get created with the right content — the
+  likely culprit is that it opened without taking focus, on whichever
+  monitor the sun happens to be pinned to, easy to miss if that's not
+  the monitor being looked at right after a restart. Now calls
+  `show()`/`moveTop()`/`focus()` once its content is loaded instead of
+  just sitting there passively on top.

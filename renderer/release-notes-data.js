@@ -31,6 +31,14 @@ const RELEASE_NOTES = {
       "New: this window! After an update, Solzinho shows what changed since last time, in your language.",
     ],
   },
+  '1.0.12': {
+    pt: [
+      'Essa janela de novidades agora pede foco de verdade ao abrir, em vez de só aparecer por cima sem chamar atenção — mais fácil de notar logo depois de uma atualização.',
+    ],
+    en: [
+      "This notes window now actually grabs focus when it opens, instead of just appearing on top without calling attention to itself — easier to notice right after an update.",
+    ],
+  },
 };
 
 // Compara "1.2.10" com "1.2.9" numericamente por partes — "1.2.10" > "1.2.9"

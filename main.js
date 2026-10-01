@@ -818,6 +818,13 @@ function openReleaseNotesPrompt(fromVersion, toVersion) {
   r.webContents.once('did-finish-load', () => {
     if (!r.isDestroyed()) {
       r.webContents.send('release-notes-status', { fromVersion, toVersion, language: settings.language });
+      // sem isso, a janela abre atrás de qualquer coisa que já esteja em
+      // foco (ex.: o navegador, o editor) — fácil de passar despercebida,
+      // já que ela não pisca nem mexe o sol pra chamar atenção como o
+      // aviso de segunda instância faz
+      r.show();
+      r.moveTop();
+      r.focus();
     }
   });
   r.on('closed', () => {
