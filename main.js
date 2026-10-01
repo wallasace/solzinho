@@ -1,4 +1,4 @@
-const { app, BrowserWindow, screen, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, screen, ipcMain, shell, powerMonitor } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
@@ -1066,6 +1066,34 @@ function keepSunOnScreen() {
   repositionFollowerWindows();
 }
 
+// Bug real relatado: depois de um tempo rodando (dias), o sol "sumia" —
+// só as dicas continuavam aparecendo normalmente (balão é recriado do zero
+// a cada vez, o sol não: a janela dele é criada uma vez só e vive o app
+// inteiro). É um bug conhecido do Chromium/Electron com janelas
+// `transparent: true` de vida longa: depois de o monitor dormir/acordar (ou
+// o driver de vídeo resetar), o compositor às vezes não repinta a janela —
+// ela fica com a última superfície (em branco/transparente) enquanto o
+// conteúdo por dentro continua perfeitamente normal. `invalidate()` força
+// um repaint completo; o resize de 1px (mesmo truque já usado em
+// refreshInputAfterDisplayChange, pra outro bug do Electron) é um reforço
+// a mais, caso o invalidate sozinho não baste.
+function refreshSunRendering() {
+  if (!win || win.isDestroyed()) return;
+  win.webContents.invalidate();
+  const b = win.getBounds();
+  win.setBounds({ ...b, width: b.width + 1 });
+  setTimeout(() => {
+    if (win && !win.isDestroyed()) win.setBounds(b);
+  }, 50);
+  keepSunOnScreen();
+}
+
+// reforço leve além do powerMonitor: cobre o caso do compositor ficar com a
+// superfície em branco sem um evento de dormir/acordar claro pra disparar
+// (ex.: o driver de vídeo resetando sozinho com a máquina ligada o tempo
+// todo) — só um invalidate() (repaint), sem o resize mais pesado
+let staleRenderGuardTimer = null;
+
 app.whenReady().then(() => {
   registerAutoLaunch();
   createWindow();
@@ -1073,6 +1101,11 @@ app.whenReady().then(() => {
   screen.on('display-removed', keepSunOnScreen);
   screen.on('display-added', keepSunOnScreen);
   screen.on('display-metrics-changed', keepSunOnScreen);
+  powerMonitor.on('resume', refreshSunRendering);
+  powerMonitor.on('unlock-screen', refreshSunRendering);
+  staleRenderGuardTimer = setInterval(() => {
+    if (win && !win.isDestroyed()) win.webContents.invalidate();
+  }, 10 * 60 * 1000);
 });
 
 app.on('window-all-closed', () => {
@@ -1085,5 +1118,6 @@ app.on('window-all-closed', () => {
   if (dragTimer) clearInterval(dragTimer);
   if (hoverTimer) clearInterval(hoverTimer);
   if (flingTimer) clearInterval(flingTimer);
+  if (staleRenderGuardTimer) clearInterval(staleRenderGuardTimer);
   app.quit();
 });

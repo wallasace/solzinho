@@ -380,6 +380,24 @@ however many monitors someone has, at any scale and arrangement.
   change**, with the app open: `keepSunOnScreen()` brings the sun back to
   the nearest monitor.
 
+Bug fixed: real-world report — "after a while the sun disappears, only
+the tips keep showing up". The sun's window is created once and lives for
+the entire app's uptime (days); the bubble, by contrast, is destroyed and
+recreated from scratch every single time it shows (`showSpeech()`), so it
+gets a brand-new rendering surface each time. That difference points at a
+known Chromium/Electron issue with long-lived `transparent: true`
+windows: after the display sleeps/wakes or the GPU driver resets, the
+compositor can fail to repaint the window — it's left showing a blank/
+stale surface while everything inside keeps updating normally, which
+matches the report exactly (the bubble, freshly created, keeps working;
+the sun, never recreated, goes blank). `refreshSunRendering()` now runs
+`webContents.invalidate()` (forces a full repaint) plus the same 1px
+resize trick used in `refreshInputAfterDisplayChange()` for a different
+Electron bug, triggered by `powerMonitor`'s `'resume'` and
+`'unlock-screen'` events; a lighter periodic `invalidate()` (every 10
+minutes) acts as a backstop for cases without a clear sleep/wake event
+(e.g. a GPU driver resetting on its own while the machine stays awake).
+
 The screen boundary (`clampSunWindowPosition`) is applied to the
 **visible sun**, not the window: the window has ~80px invisible on each
 side and ~210px on top (room for the bubble), so locking the window would
@@ -429,6 +447,17 @@ The bounce sound's volume (not its pitch) scales with the impact's force
 (`speed`, sent by `flingTick`). `settings.muted` (menu → 🔇/🔊) turns off
 all four; the change is broadcast on the spot via `mute-changed`, same
 as the language.
+
+Bug fixed: after a long idle stretch, Chromium auto-suspends the
+`AudioContext` to save power. `getAudioCtx()` used to call
+`audioCtx.resume()` without awaiting it and return immediately, so the
+four play functions scheduled their notes against `ctx.currentTime`
+*before* the context had actually resumed — the first sound after being
+idle for a while played with an audible delay (and the scheduled
+start/stop times ended up calculated against a stale clock). `getAudioCtx`
+and all four play functions are `async` now and `await` the resume before
+touching `currentTime`; callers still fire-and-forget them (`playChime();`
+with no `await`), which is fine since nothing uses their return value.
 
 ## Auto-update (`electron-updater`)
 

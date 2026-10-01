@@ -284,3 +284,18 @@ feature milestones, not releases.
   only 10px of margin between the sun and the window's bottom edge, the
   bottom ray tips got clipped every time a tip showed. Margin bumped to
   30px.
+- Fixed a real bug reported after days of uptime: the sun would eventually
+  disappear while tips kept showing up normally. The sun's window is
+  created once and never recreated (unlike the bubble, which gets a fresh
+  window every time) — a known Chromium/Electron issue where long-lived
+  transparent windows can be left showing a blank, stale surface after
+  the display sleeps/wakes or the GPU driver resets. Now forces a repaint
+  on wake/unlock, plus a periodic one every 10 minutes as a backstop.
+- Fixed: after being idle for a long stretch, the first sound played with
+  an audible delay. Chromium auto-suspends the audio context to save
+  power, and the code wasn't waiting for it to actually resume before
+  scheduling notes against its clock.
+- Added about 100 new tip messages per language (now 120 total each),
+  across breathing, sensory grounding, self-compassion, cognitive
+  reframing, work encouragement, presence, gratitude, perfectionism,
+  social connection, and sleep/rest.

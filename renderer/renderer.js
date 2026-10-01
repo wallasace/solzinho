@@ -36,9 +36,14 @@ function setCheckingUpdate(active) {
   sunWrap.classList.toggle('checking-update', !!active);
 }
 
-function getAudioCtx() {
+// Depois de muito tempo sem interação, o Chromium suspende o AudioContext
+// sozinho (economia de energia); resume() é assíncrono. Sem esperar ele
+// terminar antes de agendar as notas (ctx.currentTime + start), o primeiro
+// som depois de ficar ocioso por um tempão tocava com atraso — o tempo
+// agendado era calculado antes do contexto voltar a rodar de verdade.
+async function getAudioCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
+  if (audioCtx.state === 'suspended') await audioCtx.resume();
   return audioCtx;
 }
 
@@ -83,10 +88,10 @@ function playWarmNote(ctx, dest, freq, { start = 0, gain = 0.16, attack = 0.02, 
   overtone.stop(t0 + duration);
 }
 
-function playChime() {
+async function playChime() {
   if (muted) return;
   try {
-    const ctx = getAudioCtx();
+    const ctx = await getAudioCtx();
     const dest = warmDestination(ctx, 2600);
     const notes = [880, 1108.7, 1318.5]; // A5, C#6, E6 — um "tin-tin-tin" quentinho
     notes.forEach((freq, i) => playWarmNote(ctx, dest, freq, { start: i * 0.11, gain: 0.15, duration: 0.6 }));
@@ -95,10 +100,10 @@ function playChime() {
   }
 }
 
-function playBounceThud(speed) {
+async function playBounceThud(speed) {
   if (muted) return;
   try {
-    const ctx = getAudioCtx();
+    const ctx = await getAudioCtx();
     const dest = warmDestination(ctx, 2200);
     // toque de "marimba" quentinho: uma nota agradável (sorteada entre umas
     // poucas, tipo sino de vento), com o volume (não o tom) escalando com a
@@ -116,10 +121,10 @@ function playBounceThud(speed) {
   }
 }
 
-function playMenuPop() {
+async function playMenuPop() {
   if (muted) return;
   try {
-    const ctx = getAudioCtx();
+    const ctx = await getAudioCtx();
     const dest = warmDestination(ctx, 1800);
     const t0 = ctx.currentTime;
     // pop curto e discreto, mas redondo — sem harmônico, sem "corpo" grande,
@@ -140,10 +145,10 @@ function playMenuPop() {
   }
 }
 
-function playMoonToSunChime() {
+async function playMoonToSunChime() {
   if (muted) return;
   try {
-    const ctx = getAudioCtx();
+    const ctx = await getAudioCtx();
     const dest = warmDestination(ctx, 2400);
     // "puf" de transformação: duas notas subindo, quentinhas, como a lua se
     // desfazendo de volta em sol
