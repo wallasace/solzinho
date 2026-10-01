@@ -122,7 +122,7 @@ const BREATHING_COUNTDOWN_MS = 3000;
 const BREATHING_EXIT_ANIM_MS = 700; // duração da transformação lua->sol (renderer/style.css)
 
 const MENU_W = 260;
-const MENU_H = 612;
+const MENU_H = 648;
 const FREQ_PROMPT_W = 280;
 const FREQ_PROMPT_H = 150;
 const UPDATE_PROMPT_W = 300;
@@ -154,6 +154,20 @@ function clampSunWindowPosition(x, y, area) {
     x: Math.round(Math.min(Math.max(x, minX), maxX)),
     y: Math.round(Math.min(Math.max(y, minY), maxY)),
   };
+}
+
+// Com "travar no monitor" ligado, arrastar ou arremessar não deve levar o
+// sol pra outro monitor: em vez do monitor mais próximo de onde o cursor
+// quer levar ele (comportamento normal, permite trocar de tela), usa
+// sempre o monitor em que o sol já está (`sunDisplayId`, mantido por
+// setSunBounds) — se esse monitor não existir mais (desconectado), cai de
+// volta no comportamento normal pra não travar numa tela que já era.
+function lockAwareArea(wantX, wantY) {
+  if (settings.lockToMonitor && sunDisplayId !== null) {
+    const locked = screen.getAllDisplays().find((d) => d.id === sunDisplayId);
+    if (locked) return locked.workArea;
+  }
+  return screen.getDisplayNearestPoint(sunCenter({ x: wantX, y: wantY })).workArea;
 }
 
 function computeFreqPromptPosition(sunBounds, area) {
@@ -257,7 +271,7 @@ function saveSettings() {
 }
 
 const settings = Object.assign(
-  { frequencyMinutes: 30, tipsPaused: false, walking: true, language: 'en', muted: false, autoLaunch: true, sunglasses: false },
+  { frequencyMinutes: 30, tipsPaused: false, walking: true, language: 'en', muted: false, autoLaunch: true, sunglasses: false, lockToMonitor: false },
   loadSettings()
 );
 
@@ -875,6 +889,7 @@ function openContextMenu(trayBounds) {
       muted: settings.muted,
       autoLaunch: settings.autoLaunch,
       sunglasses: settings.sunglasses,
+      lockToMonitor: settings.lockToMonitor,
       version: app.getVersion(),
     });
   });
@@ -935,6 +950,10 @@ function handleMenuAction(action, value) {
       settings.sunglasses = !settings.sunglasses;
       saveSettings();
       if (win && !win.isDestroyed()) win.webContents.send('sunglasses-changed', settings.sunglasses);
+      break;
+    case 'toggle-lock-monitor':
+      settings.lockToMonitor = !settings.lockToMonitor;
+      saveSettings();
       break;
     case 'check-for-updates':
       checkForUpdatesNow();
@@ -999,8 +1018,9 @@ function dragTick() {
   const cursor = screen.getCursorScreenPoint();
   const wantX = dragStartBounds.x + (cursor.x - dragStartMouse.x);
   const wantY = dragStartBounds.y + (cursor.y - dragStartMouse.y);
-  // vale o monitor onde o sol vai ficar — qualquer um dos monitores
-  const area = screen.getDisplayNearestPoint(sunCenter({ x: wantX, y: wantY })).workArea;
+  // vale o monitor onde o sol vai ficar — qualquer um dos monitores (a não
+  // ser que esteja travado num só, ver lockAwareArea)
+  const area = lockAwareArea(wantX, wantY);
   const { x, y } = clampSunWindowPosition(wantX, wantY, area);
 
   const now = Date.now();
@@ -1081,7 +1101,7 @@ function flingTick() {
   const pos = getSunPos();
   const rawX = pos.x + flingVel.x * dt;
   const rawY = pos.y + flingVel.y * dt;
-  const area = screen.getDisplayNearestPoint(sunCenter({ x: rawX, y: rawY })).workArea;
+  const area = lockAwareArea(rawX, rawY);
   const { x, y } = clampSunWindowPosition(rawX, rawY, area);
 
   const hitX = x !== Math.round(rawX);

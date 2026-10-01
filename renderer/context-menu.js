@@ -77,6 +77,13 @@ function render(state) {
   );
   menu.appendChild(toggleAutoLaunch);
 
+  const toggleLockMonitor = toggleItem(
+    state.lockToMonitor ? T.unlockFromMonitor : T.lockToMonitor,
+    state.lockToMonitor,
+    () => window.menuApi.action('toggle-lock-monitor')
+  );
+  menu.appendChild(toggleLockMonitor);
+
   const sunglassesRow = el('div', 'lang-row');
   const sunglassesBtn = el('span', 'lang-btn' + (state.sunglasses ? ' active' : ''), '🕶️');
   sunglassesBtn.title = state.sunglasses ? T.disableSunglasses : T.enableSunglasses;

@@ -320,3 +320,6 @@ feature milestones, not releases.
 - Settings are now written atomically (temp file + rename) instead of
   directly — a crash mid-write could previously corrupt `settings.json`
   and silently wipe every saved preference back to defaults.
+- New menu option: "🔒 Lock to current monitor". When on, dragging and
+  flinging the sun stay confined to the monitor it's already on instead
+  of being able to cross over to another one.

@@ -43,6 +43,8 @@ const I18N = {
     disableSunglasses: 'Tirar óculos escuros',
     alreadyRunningTitle: 'Solzinho já está aberto',
     alreadyRunningBody: 'Ele já está rodando bem aqui na sua tela.',
+    lockToMonitor: '🔒 Travar no monitor atual',
+    unlockFromMonitor: '🔓 Destravar do monitor',
   },
   en: {
     pauseTips: 'Pause tips',
@@ -86,5 +88,7 @@ const I18N = {
     disableSunglasses: 'Take off sunglasses',
     alreadyRunningTitle: 'Solzinho is already open',
     alreadyRunningBody: "It's already running right here on your screen.",
+    lockToMonitor: '🔒 Lock to current monitor',
+    unlockFromMonitor: '🔓 Unlock from monitor',
   },
 };

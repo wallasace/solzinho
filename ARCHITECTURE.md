@@ -377,8 +377,19 @@ however many monitors someone has, at any scale and arrangement.
 
 - **Walking**: stays on the monitor the sun is on (edge to edge of it);
   never switches screens on its own.
-- **Dragging**: the only way to change monitor; can go to any of them,
-  locked to whichever monitor the sun ends up on.
+- **Dragging**: normally the only way to change monitor; can go to any of
+  them, locked to whichever monitor the sun ends up on. With
+  `settings.lockToMonitor` on (menu → "🔒 Lock to current monitor"),
+  dragging and flinging both stay clamped to whichever monitor the sun
+  was already on (`lockAwareArea()`, used in place of the usual
+  `getDisplayNearestPoint(...)` in `dragTick()`/`flingTick()`) — trying to
+  drag it onto another monitor just stops it at the edge instead of
+  crossing over. The locked monitor is `sunDisplayId` (already tracked by
+  `setSunBounds()` for the DPI-scale-change workaround above), not a
+  fixed display index, so it keeps working correctly if monitors get
+  reordered; if that exact monitor disconnects, it falls back to the
+  normal nearest-monitor behavior rather than getting stuck targeting a
+  display that no longer exists.
 - **Fling**: releasing the sun while moving fast keeps the motion going
   (`startFlingIfFast` / `flingTick`, in `main.js`) — friction on every
   tick, bouncing off the current monitor's edges (loses part of the
