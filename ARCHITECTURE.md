@@ -183,6 +183,65 @@ the `Object.assign(...)` at the top of the file only apply the very first
 time the app ever runs, when the file doesn't exist yet; they don't reset
 anything on an update.
 
+### Reliability hardening
+
+A few gaps that don't matter for a five-minute test but do matter for an
+app meant to run unattended for days, found during an infrastructure
+review and each verified with a real failure induced on purpose, not just
+read through:
+
+- **Single instance.** `app.requestSingleInstanceLock()` at the very top
+  of the file; if it fails, the second process `return`s out of the whole
+  module (each file is its own function under CommonJS, so this exits
+  cleanly before creating anything) and quits. Without this, two copies
+  running at once — a double-launch, or a race between the auto-launch
+  shortcut and a manual one — meant two suns, two tray icons, and both
+  writing `settings.json` at the same time. Verified by launching a
+  second real `electron .` process alongside a running one: it exits
+  immediately (no new windows), process count stays exactly what one
+  healthy instance looks like.
+- **A heads-up instead of silence.** Trying to open a second copy used to
+  just... do nothing visible. Now `app.on('second-instance', ...)` shows
+  a native OS notification ("Solzinho is already open") and pings the
+  real sun to bounce + chime (`already-running-ping` over IPC, reusing
+  `playClickBounce()`/`playChime()`) — points at where it already is
+  instead of leaving the person wondering if anything happened. Verified
+  the bounce class toggles on and off correctly in response to a real
+  `second-instance` event.
+- **Renderer crash recovery.** `webContents.on('render-process-gone', ...)`
+  reloads the sun's window from scratch if its renderer process actually
+  dies (not the same thing as the GPU-compositor staleness
+  `refreshSunRendering()` handles above — this is the process itself
+  exiting). Before this, a real crash left the window permanently blank
+  for the rest of the session, indistinguishable from the compositor bug
+  without digging. `did-finish-load` had to change from `.once` to `.on`
+  too, since a reload needs `init-settings` sent again — otherwise the
+  window comes back empty of all the person's settings. Verified with
+  `webContents.forcefullyCrashRenderer()` (a real Electron API for
+  exactly this): the crash is detected, logged, the window reloads, and a
+  tip requested afterward genuinely shows up — the whole chain works, not
+  just the reload.
+- **Global error handlers.** `process.on('uncaughtException', ...)` and
+  `process.on('unhandledRejection', ...)` — before these, an error
+  anywhere in the main process with no local `try/catch` had nowhere to
+  go; depending on where it happened, that could silently kill the
+  process or leave it in a half-working state with zero trace of why.
+- **A real error log.** `logErrorToFile()` writes to
+  `userData/error.log`, capped at ~1MB (rewrites from scratch past that
+  instead of growing forever). Before this, a bug report like "it just
+  disappeared after a while" had nothing to go on but a vague
+  description — now there's at least a timestamped stack trace to start
+  from.
+- **Atomic settings writes.** `saveSettings()` now writes to
+  `settings.json.tmp` and renames it over the real file, instead of
+  writing the real file directly. A plain `writeFileSync` isn't atomic —
+  if the process died mid-write (crash, power loss), the file could be
+  left half-written, and `loadSettings()`'s catch would silently fall
+  back to every default, wiping the person's configuration without any
+  warning. A rename is atomic at the filesystem level: either the old
+  file is still there, or the new one is already complete, never a
+  half-state.
+
 ### Anchoring the secondary windows
 
 The menu and the frequency window aren't positioned relative to the whole

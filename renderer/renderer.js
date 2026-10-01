@@ -469,6 +469,12 @@ window.solzinho.onMuteChanged(applyMute);
 window.solzinho.onTipsPausedChanged(applyTipsPaused);
 window.solzinho.onSunglassesChanged(applySunglasses);
 window.solzinho.onCheckingUpdate(setCheckingUpdate);
+// alguém tentou abrir uma segunda cópia — dá um pulinho + um tin-tin pra
+// sinalizar "tô aqui", em vez de não dar sinal nenhum de vida
+window.solzinho.onAlreadyRunningPing(() => {
+  playClickBounce();
+  playChime();
+});
 window.solzinho.onFlinging(setFlinging);
 window.solzinho.onFlingSpeed(setFlingSpeed);
 window.solzinho.onBounce(playWallBounce);

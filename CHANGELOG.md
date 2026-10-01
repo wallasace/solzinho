@@ -302,3 +302,21 @@ feature milestones, not releases.
 - Added a system tray icon. Right-clicking it opens the same menu as
   right-clicking the sun, anchored near the tray instead — handy when the
   sun is out of sight behind another window.
+
+## Reliability hardening
+
+- Only one instance can run at a time now. Opening a second copy shows a
+  notification ("Solzinho is already open") and makes the real one bounce
+  and chime to point at where it is, instead of either silently doing
+  nothing or running two copies writing to the same settings file at
+  once.
+- If the sun's renderer actually crashes (not the GPU-staleness bug fixed
+  earlier — an actual process crash), the window now reloads itself
+  automatically instead of staying permanently blank for the rest of the
+  session.
+- Added global error handlers and a capped local error log
+  (`userData/error.log`) — a crash anywhere used to leave zero trace; now
+  there's at least a timestamped stack trace to start from.
+- Settings are now written atomically (temp file + rename) instead of
+  directly — a crash mid-write could previously corrupt `settings.json`
+  and silently wipe every saved preference back to defaults.

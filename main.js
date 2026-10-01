@@ -1,7 +1,78 @@
-const { app, BrowserWindow, screen, ipcMain, shell, powerMonitor, Tray, nativeImage } = require('electron');
+const { app, BrowserWindow, screen, ipcMain, shell, powerMonitor, Tray, nativeImage, Notification } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
+
+// Só uma instância por vez: sem isso, abrir o app duas vezes (atalho +
+// auto-início numa corrida, ou clique duplo sem querer) cria dois sóis,
+// dois ícones na bandeja, e os dois escrevendo no mesmo settings.json ao
+// mesmo tempo — exatamente a confusão que já aconteceu entre testes e o
+// app real nesta mesma máquina. `return` aqui sai do módulo inteiro (cada
+// arquivo é uma função no CommonJS), então nada mais abaixo chega a rodar
+// nessa segunda instância.
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+  return;
+}
+// textos curtos duplicados de renderer/i18n.js de propósito: main.js roda
+// em Node puro (sem DOM), e i18n.js é escrito como script de navegador
+// (global `I18N`), não dá pra simplesmente requerer ele aqui
+const ALREADY_RUNNING_TEXT = {
+  pt: { title: 'Solzinho já está aberto', body: 'Ele já está rodando bem aqui na sua tela.' },
+  en: { title: 'Solzinho is already open', body: "It's already running right here on your screen." },
+};
+
+// alguém tentou abrir uma segunda cópia (atalho clicado de novo, por
+// exemplo) — não abre outra instância; em vez de só sumir sem dar
+// nenhum sinal, avisa com uma notificação nativa e faz o sol de verdade
+// dar um pulinho + tocar o chime, apontando onde ele já está
+app.on('second-instance', () => {
+  const text = ALREADY_RUNNING_TEXT[settings.language] || ALREADY_RUNNING_TEXT.en;
+  if (Notification.isSupported()) {
+    new Notification({
+      title: text.title,
+      body: text.body,
+      icon: path.join(__dirname, 'build', 'icon.png'),
+    }).show();
+  }
+  if (win && !win.isDestroyed()) {
+    refreshSunRendering();
+    win.webContents.send('already-running-ping');
+  }
+});
+
+// Loga erros reais num arquivo local (userData/error.log), limitado a
+// ~1MB — sem isso, se algo travasse silenciosamente numa máquina de
+// verdade, não haveria nenhum rastro pra investigar depois, só o relato
+// vago da pessoa ("sumiu depois de um tempo").
+function logErrorToFile(err) {
+  try {
+    const logPath = path.join(app.getPath('userData'), 'error.log');
+    const line = `[${new Date().toISOString()}] ${err && err.stack ? err.stack : err}\n`;
+    let existing = '';
+    try {
+      if (fs.statSync(logPath).size < 1024 * 1024) existing = fs.readFileSync(logPath, 'utf-8');
+    } catch {
+      // arquivo ainda não existe, ou passou do limite — recomeça do zero
+    }
+    fs.writeFileSync(logPath, existing + line);
+  } catch {
+    // logar não pode, ele mesmo, derrubar o app
+  }
+}
+
+// Rede de segurança: um erro não tratado em qualquer lugar do processo
+// principal antes não deixava rastro nenhum — o app podia travar ou
+// ficar num estado esquisito sem nenhuma pista do motivo.
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err);
+  logErrorToFile(err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason);
+  logErrorToFile(reason instanceof Error ? reason : new Error(String(reason)));
+});
 
 const WIN_W = 260;
 const WIN_H = 320;
@@ -170,7 +241,16 @@ function loadSettings() {
 
 function saveSettings() {
   try {
-    fs.writeFileSync(settingsPath(), JSON.stringify(settings, null, 2));
+    // escreve num arquivo temporário e troca o nome por cima do real:
+    // writeFileSync direto no arquivo final não é atômico — se o processo
+    // morrer bem no meio da escrita (queda de luz, crash), o settings.json
+    // fica corrompido pela metade, e loadSettings() cairia no catch e
+    // voltaria tudo pros padrões, apagando as preferências silenciosamente.
+    // Renomear é atômico no sistema de arquivos: ou o arquivo velho
+    // continua lá, ou o novo já está completo, nunca um meio-termo.
+    const tmpPath = settingsPath() + '.tmp';
+    fs.writeFileSync(tmpPath, JSON.stringify(settings, null, 2));
+    fs.renameSync(tmpPath, settingsPath());
   } catch {
     // não é crítico se não conseguir salvar
   }
@@ -226,8 +306,23 @@ function createWindow() {
   win.setIgnoreMouseEvents(true, { forward: true });
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
 
-  win.webContents.once('did-finish-load', () => {
+  // .on, não .once: se o renderer morrer e for recarregado (ver
+  // render-process-gone abaixo), precisa mandar o init-settings de novo —
+  // senão a janela volta em branco, sem nenhum dos ajustes da pessoa
+  win.webContents.on('did-finish-load', () => {
     win.webContents.send('init-settings', settings);
+  });
+
+  // Diferente do bug de "superfície em branco" (refreshSunRendering, um
+  // problema de repaint do compositor), isso é o processo do renderer
+  // morrendo de verdade (crash, falta de memória, driver de GPU). Sem
+  // recarregar, a janela ficava permanentemente em branco pro resto da
+  // sessão — só recriar o conteúdo resolve, os timers do processo
+  // principal (caminhada, dicas) continuam rodando normalmente, só a
+  // parte visual precisa voltar.
+  win.webContents.on('render-process-gone', (_event, details) => {
+    logErrorToFile(new Error(`sun renderer gone: reason=${details.reason} exitCode=${details.exitCode}`));
+    if (win && !win.isDestroyed()) win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
   });
 
   startWalking();

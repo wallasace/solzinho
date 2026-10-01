@@ -41,6 +41,8 @@ const I18N = {
     breathingAgainHint: 'toque para respirar de novo',
     enableSunglasses: 'Colocar óculos escuros',
     disableSunglasses: 'Tirar óculos escuros',
+    alreadyRunningTitle: 'Solzinho já está aberto',
+    alreadyRunningBody: 'Ele já está rodando bem aqui na sua tela.',
   },
   en: {
     pauseTips: 'Pause tips',
@@ -82,5 +84,7 @@ const I18N = {
     breathingAgainHint: 'tap to breathe again',
     enableSunglasses: 'Put on sunglasses',
     disableSunglasses: 'Take off sunglasses',
+    alreadyRunningTitle: 'Solzinho is already open',
+    alreadyRunningBody: "It's already running right here on your screen.",
   },
 };
