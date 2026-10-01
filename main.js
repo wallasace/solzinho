@@ -285,9 +285,13 @@ function sunCenter(pos) {
 
 // Área útil do monitor onde o sol visível está. Usa o centro do sol, não a
 // janela: a janela é bem maior e pode estar mais em cima de outro monitor.
+// Passa por lockAwareArea (não só getDisplayNearestPoint direto) porque a
+// caminhada sozinha também pode levar o sol pra perto da borda entre dois
+// monitores — sem isso, o "travar no monitor" só valia pra arraste/arremesso.
 function currentWorkArea() {
-  if (win && !win.isDestroyed()) return screen.getDisplayNearestPoint(sunCenter(getSunPos())).workArea;
-  return screen.getPrimaryDisplay().workArea;
+  if (!win || win.isDestroyed()) return screen.getPrimaryDisplay().workArea;
+  const pos = getSunPos();
+  return lockAwareArea(pos.x, pos.y);
 }
 
 function createWindow() {
