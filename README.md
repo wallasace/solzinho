@@ -70,7 +70,8 @@ then, without giving up screen space for it.
   exercise, if one is running).
 - **Right-click**: menu with pause tips, adjust frequency (with a custom
   option), stop/resume walking, ask for a tip now, start the breathing
-  exercise, put on sunglasses, and switch language (🇧🇷/🇺🇸).
+  exercise, put on sunglasses, and switch language (🇧🇷/🇺🇸). Also
+  available from the system tray icon, for when the sun is out of sight.
 - **Portuguese and English**: the whole interface and the tips have both
   versions.
 - **Starts with Windows**: once installed (see below), it launches on its

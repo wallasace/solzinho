@@ -1,4 +1,4 @@
-const { app, BrowserWindow, screen, ipcMain, shell, powerMonitor } = require('electron');
+const { app, BrowserWindow, screen, ipcMain, shell, powerMonitor, Tray, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
@@ -112,6 +112,18 @@ function computeMenuPosition(sunBounds, area) {
   return { x, y };
 }
 
+// o ícone da bandeja fica perto da barra de tarefas (normalmente embaixo),
+// então o menu abre pra cima dele, centralizado na largura do ícone —
+// convenção comum dos menus de bandeja no Windows
+function computeTrayMenuPosition(trayBounds, area) {
+  let x = Math.round(trayBounds.x + trayBounds.width / 2 - MENU_W / 2);
+  let y = Math.round(trayBounds.y - MENU_H - 8);
+  x = Math.min(Math.max(x, area.x), area.x + area.width - MENU_W);
+  if (y < area.y) y = Math.round(trayBounds.y + trayBounds.height + 8); // sem espaço em cima: abre embaixo
+  y = Math.min(Math.max(y, area.y), area.y + area.height - MENU_H);
+  return { x, y };
+}
+
 function repositionFollowerWindows() {
   if (!win || win.isDestroyed()) return;
   const area = currentWorkArea();
@@ -122,7 +134,7 @@ function repositionFollowerWindows() {
     freqPromptWin.setBounds({ x, y, width: FREQ_PROMPT_W, height: FREQ_PROMPT_H });
   }
 
-  if (menuWin && !menuWin.isDestroyed()) {
+  if (menuWin && !menuWin.isDestroyed() && !menuIsTrayAnchored) {
     const { x, y } = computeMenuPosition(sunBounds, area);
     menuWin.setBounds({ x, y, width: MENU_W, height: MENU_H });
   }
@@ -714,7 +726,11 @@ function reportBug() {
   shell.openExternal(url);
 }
 
-function openContextMenu() {
+// trayBounds: quando vem do ícone da bandeja (right-click nele), ancora o
+// menu perto dele em vez de perto do sol
+let menuIsTrayAnchored = false;
+
+function openContextMenu(trayBounds) {
   // Fecha o menu anterior na hora (destroy, não close): o close() é
   // assíncrono, e o "closed" do menu antigo chegava depois de o novo já ter
   // sido criado — e apagava a referência do novo, deixando-o órfão.
@@ -723,10 +739,13 @@ function openContextMenu() {
     menuWin = null;
     old.destroy();
   }
+  menuIsTrayAnchored = !!trayBounds;
 
-  const area = currentWorkArea();
+  const area = trayBounds
+    ? screen.getDisplayNearestPoint({ x: trayBounds.x, y: trayBounds.y }).workArea
+    : currentWorkArea();
   const sunBounds = win && !win.isDestroyed() ? win.getBounds() : { x: area.x, y: area.y - WIN_H, width: WIN_W };
-  const { x, y } = computeMenuPosition(sunBounds, area);
+  const { x, y } = trayBounds ? computeTrayMenuPosition(trayBounds, area) : computeMenuPosition(sunBounds, area);
 
   pauseWalk('menu');
 
@@ -1094,9 +1113,24 @@ function refreshSunRendering() {
 // todo) — só um invalidate() (repaint), sem o resize mais pesado
 let staleRenderGuardTimer = null;
 
+// Ícone na bandeja do sistema (perto do relógio): o mesmo emoji usado como
+// ícone do app, só que redimensionado pro tamanho que a bandeja espera.
+// Botão direito nele abre o mesmo menu de sempre, ancorado perto do ícone
+// em vez de perto do sol — útil pra quando o sol está escondido atrás de
+// outra janela ou longe da vista no momento.
+let tray = null;
+
+function createTray() {
+  const icon = nativeImage.createFromPath(path.join(__dirname, 'build', 'icon.png')).resize({ width: 32, height: 32 });
+  tray = new Tray(icon);
+  tray.setToolTip('Solzinho');
+  tray.on('right-click', (_event, bounds) => openContextMenu(bounds));
+}
+
 app.whenReady().then(() => {
   registerAutoLaunch();
   createWindow();
+  createTray();
   initAutoUpdater();
   screen.on('display-removed', keepSunOnScreen);
   screen.on('display-added', keepSunOnScreen);
@@ -1119,5 +1153,6 @@ app.on('window-all-closed', () => {
   if (hoverTimer) clearInterval(hoverTimer);
   if (flingTimer) clearInterval(flingTimer);
   if (staleRenderGuardTimer) clearInterval(staleRenderGuardTimer);
+  if (tray) tray.destroy();
   app.quit();
 });

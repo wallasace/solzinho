@@ -520,6 +520,24 @@ dev too — only the actual `app.setLoginItemSettings()` call is skipped.
 The menu calls `registerAutoLaunch()` again on every toggle, to apply it
 right away.
 
+## System tray icon
+
+`createTray()` puts the same 🌞 icon (resized to 32×32) in the system
+tray, next to the clock. Right-clicking it opens the exact same custom
+HTML menu as right-clicking the sun itself (`openContextMenu(trayBounds)`)
+— just anchored near the tray icon instead of the sun, via
+`computeTrayMenuPosition()` (opens above the icon, since the tray sits at
+the bottom of the screen; falls back to opening below if there's no room
+above). While a tray-anchored menu is open, `repositionFollowerWindows()`
+skips re-anchoring it to the sun (`menuIsTrayAnchored` flag) — there's no
+reason to drag it around just because the sun moved. Useful for when the
+sun is hidden behind another window or out of sight for the moment.
+
+Verified `Tray()` registers a real icon with Windows by reading
+`tray.getBounds()` right after creating it — it came back with real,
+sane screen coordinates matching the taskbar's tray area, not zeros or
+garbage.
+
 ## Icon
 
 `build/icon.png` (1024×1024, transparent background) is the 🌞 emoji

@@ -299,3 +299,6 @@ feature milestones, not releases.
   across breathing, sensory grounding, self-compassion, cognitive
   reframing, work encouragement, presence, gratitude, perfectionism,
   social connection, and sleep/rest.
+- Added a system tray icon. Right-clicking it opens the same menu as
+  right-clicking the sun, anchored near the tray instead — handy when the
+  sun is out of sight behind another window.
