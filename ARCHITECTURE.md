@@ -380,16 +380,30 @@ however many monitors someone has, at any scale and arrangement.
 - **Dragging**: normally the only way to change monitor; can go to any of
   them, locked to whichever monitor the sun ends up on. With
   `settings.lockToMonitor` on (menu → "🔒 Lock to current monitor"),
-  dragging and flinging both stay clamped to whichever monitor the sun
-  was already on (`lockAwareArea()`, used in place of the usual
-  `getDisplayNearestPoint(...)` in `dragTick()`/`flingTick()`) — trying to
-  drag it onto another monitor just stops it at the edge instead of
-  crossing over. The locked monitor is `sunDisplayId` (already tracked by
-  `setSunBounds()` for the DPI-scale-change workaround above), not a
-  fixed display index, so it keeps working correctly if monitors get
-  reordered; if that exact monitor disconnects, it falls back to the
-  normal nearest-monitor behavior rather than getting stuck targeting a
-  display that no longer exists.
+  dragging, flinging, and walking on its own all stay clamped to
+  whichever monitor the sun was already on (`lockAwareArea()`, used in
+  place of the usual `getDisplayNearestPoint(...)` in
+  `dragTick()`/`flingTick()`/`currentWorkArea()`) — trying to drag it onto
+  another monitor just stops it at the edge instead of crossing over. The
+  locked monitor is `sunDisplayId` (already tracked by `setSunBounds()`
+  for the DPI-scale-change workaround above), not a fixed display index,
+  so it keeps working correctly if monitors get reordered; if that exact
+  monitor disconnects, it falls back to the normal nearest-monitor
+  behavior rather than getting stuck targeting a display that no longer
+  exists.
+  `setSunBounds()` itself needed a second fix: it used to recompute
+  `sunDisplayId` every tick from `getDisplayMatching()` on the *window's*
+  rect, which is wider than the visible sun (room for the speech bubble).
+  Near the locked monitor's edge that padding can overlap the neighbor by
+  more than half, so `getDisplayMatching` (biggest-overlap wins) would
+  pick the neighbor — silently moving the lock itself to the wrong
+  monitor, after which `lockAwareArea()` was faithfully enforcing the
+  *wrong* lock. Fling triggers this reliably (it bounces at full speed
+  right at the edge); plain dragging mostly dodges it since the cursor is
+  rarely held that close to the edge for several ticks in a row. Fixed by
+  leaving `sunDisplayId` untouched in `setSunBounds()` whenever the lock
+  is on and that display still exists, instead of recomputing it
+  unconditionally every call.
 - **Fling**: releasing the sun while moving fast keeps the motion going
   (`startFlingIfFast` / `flingTick`, in `main.js`) — friction on every
   tick, bouncing off the current monitor's edges (loses part of the
@@ -570,6 +584,44 @@ The menu shows the installed version at the bottom (`Solzinho v{x.y.z}`,
 from `app.getVersion()`) — a quick, always-visible way to confirm an
 update actually landed, instead of having to guess from a subtle visual
 change.
+
+## "What's new" window
+
+After an update actually changes the installed version, Solzinho shows
+what changed since the last time it ran — a small window centered on the
+current monitor (unlike every other secondary window, it isn't anchored
+near the sun; it's meant to be read once, calmly, not glanced at), in
+whichever language is set, closed by its own button or Escape (not by
+losing focus, also unlike the others — reading takes longer than
+dismissing a quick prompt).
+
+`checkReleaseNotesOnStartup()` runs once per launch, 1.2s after
+`createWindow()` (so it doesn't compete with the sun's entrance
+animation), and compares `app.getVersion()` against a new
+`settings.lastSeenVersion`. Three cases:
+
+- No stored value yet (fresh install): just records the current version,
+  no popup. Nobody wants "what's new" on the same run they just installed.
+- Stored value equals the current version: nothing changed, no popup.
+- Stored value is older: opens `renderer/release-notes.html` with
+  `{ fromVersion, toVersion, language }` and immediately updates
+  `lastSeenVersion` to the current version either way, so a popup that
+  goes unread (window closed, app quit) doesn't repeat forever.
+
+The actual note text lives in `renderer/release-notes-data.js`
+(`RELEASE_NOTES['1.0.11'].pt`/`.en`, one array of lines per version), not
+in `main.js`. The main process only needs version *numbers* to decide
+whether to open the window at all — it has no reason to know what the
+notes say, so the content stays where the rest of the renderer's i18n
+text already lives, and updating it for a new release never touches
+`main.js`. The renderer does its own filtering: every version strictly
+after `fromVersion` and up to `toVersion` present in the table gets its
+lines concatenated, in order, covering the case where someone skips
+straight from, say, 1.0.9 to 1.0.11 without ever seeing 1.0.10's notes.
+`compareVersions()` (numeric, per dot-separated part — "1.0.10" >
+"1.0.9") is duplicated in both `main.js` and `release-notes-data.js`,
+same reasoning as `ALREADY_RUNNING_TEXT` above: `main.js` is plain Node
+and can't load a browser-global renderer script.
 
 ## Reporting a bug
 

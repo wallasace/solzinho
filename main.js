@@ -112,6 +112,7 @@ const PHYSICAL_TIP_MINUTES = 20; // pausas físicas (água, esticar, levantar) n
 let freqPromptWin = null;
 let menuWin = null;
 let updatePromptWin = null;
+let releaseNotesWin = null;
 let manualUpdateCheck = false; // true só quando a checagem veio do menu ("Buscar atualização")
 let breathingActive = false;
 let breathingTimeout = null;
@@ -127,6 +128,8 @@ const FREQ_PROMPT_W = 280;
 const FREQ_PROMPT_H = 150;
 const UPDATE_PROMPT_W = 300;
 const UPDATE_PROMPT_H = 180;
+const RELEASE_NOTES_W = 380;
+const RELEASE_NOTES_H = 420;
 // distância do topo da janela invisível do sol (WIN_H) até o topo visual do
 // sol de verdade: bottom:30px + 96px de altura do #sun-wrap (renderer/style.css).
 // 30px (era 10px) porque o brilho (raios) passa bem além da caixa do #glow
@@ -184,6 +187,16 @@ function computeUpdatePromptPosition(sunBounds, area) {
   x = Math.min(Math.max(x, area.x), area.x + area.width - UPDATE_PROMPT_W);
   y = Math.max(y, area.y);
   return { x, y };
+}
+
+// Diferente das outras janelas-balão (ancoradas perto do sol), a janela de
+// novidades fica no meio da tela: é lida uma vez só, depois de uma
+// atualização, não precisa estar perto de nada em especial.
+function computeCenteredPosition(area, width, height) {
+  return {
+    x: Math.round(area.x + (area.width - width) / 2),
+    y: Math.round(area.y + (area.height - height) / 2),
+  };
 }
 
 function computeMenuPosition(sunBounds, area) {
@@ -271,7 +284,7 @@ function saveSettings() {
 }
 
 const settings = Object.assign(
-  { frequencyMinutes: 30, tipsPaused: false, walking: true, language: 'en', muted: false, autoLaunch: true, sunglasses: false, lockToMonitor: false },
+  { frequencyMinutes: 30, tipsPaused: false, walking: true, language: 'en', muted: false, autoLaunch: true, sunglasses: false, lockToMonitor: false, lastSeenVersion: null },
   loadSettings()
 );
 
@@ -370,6 +383,19 @@ function setSunBounds(x, y) {
   // ao cruzar para um monitor com outra escala o Windows pode redimensionar a janela
   const [w, h] = win.getSize();
   if (w !== WIN_W || h !== WIN_H) win.setSize(WIN_W, WIN_H);
+
+  // Com "travar no monitor" ligado, sunDisplayId não pode ser recalculado por
+  // conta própria aqui: a janela é bem mais larga que o sol visível (sobra
+  // espaço pro balão), então perto da borda do monitor travado a janela real
+  // pode avançar mais da metade pro monitor vizinho — e getDisplayMatching
+  // escolhe quem tem mais área de sobreposição, não o monitor do sol. Sem
+  // essa trava, isso destravava sozinho: o id virava o do vizinho e o tick
+  // seguinte já deixava o sol atravessar de vez (reproduzido no arremesso,
+  // que quica com velocidade alta perto da borda).
+  if (settings.lockToMonitor && sunDisplayId !== null) {
+    const stillConnected = screen.getAllDisplays().some((d) => d.id === sunDisplayId);
+    if (stillConnected) return;
+  }
 
   const displayId = screen.getDisplayMatching(rect).id;
   if (sunDisplayId !== null && displayId !== sunDisplayId) displayChangePending = true;
@@ -745,6 +771,73 @@ function openUpdatePrompt(payload) {
     updatePromptWin = null;
     resumeWalk('updatePrompt');
   });
+}
+
+// Compara "1.2.10" com "1.2.9" numericamente por partes — só pra decidir
+// aqui no main process SE há algo novo pra mostrar; o texto das notas em
+// si (e o filtro de quais versões entram) mora em release-notes-data.js,
+// carregado pelo renderer da janela.
+function compareVersions(a, b) {
+  const pa = String(a).split('.').map(Number);
+  const pb = String(b).split('.').map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const diff = (pa[i] || 0) - (pb[i] || 0);
+    if (diff !== 0) return diff > 0 ? 1 : -1;
+  }
+  return 0;
+}
+
+// Aberta uma vez por atualização de verdade (versão instalada mudou desde a
+// última vez que o app rodou) — nunca na primeira instalação. Fica no meio
+// do monitor atual, não presa ao sol, e só fecha quando a pessoa confirma
+// (sem fechar ao perder o foco, diferente das outras janelas-balão: aqui
+// dá pra querer ler com calma).
+function openReleaseNotesPrompt(fromVersion, toVersion) {
+  const area = currentWorkArea();
+  const { x, y } = computeCenteredPosition(area, RELEASE_NOTES_W, RELEASE_NOTES_H);
+
+  const r = new BrowserWindow({
+    width: RELEASE_NOTES_W,
+    height: RELEASE_NOTES_H,
+    x,
+    y,
+    transparent: true,
+    frame: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    hasShadow: false,
+    webPreferences: {
+      preload: path.join(__dirname, 'renderer', 'release-notes-preload.js'),
+      contextIsolation: true,
+    },
+  });
+  releaseNotesWin = r;
+  r.setAlwaysOnTop(true, 'screen-saver');
+  r.loadFile(path.join(__dirname, 'renderer', 'release-notes.html'));
+  r.webContents.once('did-finish-load', () => {
+    if (!r.isDestroyed()) {
+      r.webContents.send('release-notes-status', { fromVersion, toVersion, language: settings.language });
+    }
+  });
+  r.on('closed', () => {
+    if (releaseNotesWin !== r) return;
+    releaseNotesWin = null;
+  });
+}
+
+// Roda uma vez a cada início do app: se a versão instalada mudou desde a
+// última vez (atualização de verdade, incluindo o relaunch do
+// quitAndInstall), mostra as novidades. Na primeira instalação
+// (lastSeenVersion ainda vazio) só grava a versão atual, sem popup —
+// ninguém quer ler "novidades" ao instalar por acabar de instalar.
+function checkReleaseNotesOnStartup() {
+  const current = app.getVersion();
+  const last = settings.lastSeenVersion;
+  settings.lastSeenVersion = current;
+  saveSettings();
+  if (!last || compareVersions(current, last) <= 0) return;
+  openReleaseNotesPrompt(last, current);
 }
 
 // enquanto procura uma atualização (reais ou simuladas em dev), a coroa
@@ -1173,6 +1266,10 @@ ipcMain.on('update-later', () => {
   if (updatePromptWin) updatePromptWin.close();
 });
 
+ipcMain.on('release-notes-close', () => {
+  if (releaseNotesWin) releaseNotesWin.close();
+});
+
 ipcMain.on('stop-breathing-request', () => {
   endBreathingExercise();
 });
@@ -1251,6 +1348,8 @@ app.whenReady().then(() => {
   createWindow();
   createTray();
   initAutoUpdater();
+  // pequeno atraso pra não competir com a animação de entrada do sol
+  setTimeout(checkReleaseNotesOnStartup, 1200);
   screen.on('display-removed', keepSunOnScreen);
   screen.on('display-added', keepSunOnScreen);
   screen.on('display-metrics-changed', keepSunOnScreen);

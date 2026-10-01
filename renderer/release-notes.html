@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Novidades</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: #4a3818;
+    }
+    body {
+      padding: 16px;
+      display: flex;
+    }
+    #card {
+      flex: 1;
+      background: linear-gradient(160deg, #fffdf6, #fff2d2);
+      border: 1.5px solid rgba(240, 190, 90, 0.7);
+      border-radius: 18px;
+      box-shadow: 0 10px 28px rgba(120, 90, 20, 0.32);
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 0;
+    }
+    #title {
+      font-size: 17px;
+      font-weight: 700;
+      flex: none;
+    }
+    #notes {
+      list-style: none;
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-right: 4px;
+    }
+    #notes li {
+      font-size: 13px;
+      line-height: 1.45;
+      padding-left: 20px;
+      position: relative;
+    }
+    #notes li::before {
+      content: '☀️';
+      position: absolute;
+      left: 0;
+      top: -1px;
+      font-size: 11px;
+    }
+    .buttons {
+      display: flex;
+      justify-content: flex-end;
+      flex: none;
+      margin-top: 4px;
+    }
+    button {
+      font-size: 13px;
+      padding: 7px 16px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      background: #f5c451;
+      color: #4a3818;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div id="card">
+    <div id="title"></div>
+    <ul id="notes"></ul>
+    <div class="buttons">
+      <button type="button" id="ok"></button>
+    </div>
+  </div>
+
+  <script src="i18n.js"></script>
+  <script src="release-notes-data.js"></script>
+  <script src="release-notes.js"></script>
+</body>
+</html>

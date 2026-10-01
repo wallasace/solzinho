@@ -326,3 +326,23 @@ feature milestones, not releases.
   monitor nearest the sun's current position directly instead of going
   through the same lock-aware check as dragging/flinging, so near the
   boundary between two monitors it could still drift across on its own.
+- Fixed a second, sneakier way the monitor lock leaked: `setSunBounds`
+  recomputed which monitor the sun was "on" every tick from the full
+  window rect (wider than the visible sun, to leave room for the speech
+  bubble). Near the locked monitor's edge that padded rect could overlap
+  the neighboring monitor by more than half, so Electron's
+  `getDisplayMatching` would pick the *neighbor* as the window's display —
+  silently moving the lock to the wrong monitor. Reproduced most reliably
+  by flinging (it bounces at high speed right at the edge); dragging
+  happened to dodge it in practice since the cursor is rarely held there
+  long enough. Fixed by freezing the locked display id while the lock is
+  on, instead of recomputing it from the window rect every tick.
+- Added an in-app "what's new" window: after an update actually changes
+  the installed version (tracked via a new `lastSeenVersion` setting,
+  compared against `app.getVersion()` on startup), a small window opens
+  in the middle of the current screen listing what changed since the
+  version last seen, in whichever language is set. Skipped on a fresh
+  install (nothing to compare against yet). Per-version note text lives
+  in `renderer/release-notes-data.js`, kept separate from the main
+  process so it only has to decide *whether* something changed, not list
+  it.
