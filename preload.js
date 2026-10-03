@@ -4,6 +4,7 @@ contextBridge.exposeInMainWorld('solzinho', {
   onInit: (callback) => ipcRenderer.on('init-settings', (_e, settings) => callback(settings)),
   onState: (callback) => ipcRenderer.on('state', (_e, state) => callback(state)),
   onFaceDirection: (callback) => ipcRenderer.on('face-direction', (_e, direction) => callback(direction)),
+  onCursorRelative: (callback) => ipcRenderer.on('cursor-relative', (_e, position) => callback(position)),
   onBubble: (callback) => ipcRenderer.on('show-bubble', (_e, kind) => callback(kind)),
   onBreathingStart: (callback) => ipcRenderer.on('start-breathing', (_e, data) => callback(data)),
   onBreathingEnd: (callback) => ipcRenderer.on('end-breathing', () => callback()),

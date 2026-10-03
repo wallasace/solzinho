@@ -1090,12 +1090,21 @@ function setMouseIgnored(ignore) {
 
 function hoverTick() {
   if (!win || win.isDestroyed()) return;
+  const c = screen.getCursorScreenPoint();
+  const sun = sunVisualRect();
+  // The window stops receiving mouse events when the cursor leaves it, so
+  // sample the system cursor here. Movement is expressed relative to the sun
+  // on its current monitor and bounded to a small, comfortable head tilt.
+  if (!win.webContents.isLoading()) {
+    win.webContents.send('cursor-relative', {
+      x: Math.max(-1, Math.min(1, (c.x - sun.x - sun.width / 2) / 240)),
+      y: Math.max(-1, Math.min(1, (c.y - sun.y - sun.height / 2) / 240)),
+    });
+  }
   if (dragging) {
     setMouseIgnored(false);
     return;
   }
-  const c = screen.getCursorScreenPoint();
-  const sun = sunVisualRect();
   const overSun = c.x >= sun.x && c.x <= sun.x + sun.width && c.y >= sun.y && c.y <= sun.y + sun.height;
   setMouseIgnored(!overSun);
 }

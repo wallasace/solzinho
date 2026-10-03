@@ -360,6 +360,7 @@ function playClickBounce() {
   sunWrap.classList.remove('clicked');
   void sunWrap.offsetWidth; // reinicia a animação em cliques seguidos
   sunWrap.classList.add('clicked');
+  sunWrap.dispatchEvent(new Event('mascot-poke'));
 }
 
 sunWrap.addEventListener('animationend', (event) => {
